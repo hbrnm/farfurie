@@ -5,7 +5,8 @@ import { Plus, Sparkles, X } from "lucide-react";
 import { foodName, foodUnit, searchFoods } from "@/lib/foods";
 import { fillTheGap } from "@/lib/fillGap";
 import { t } from "@/lib/i18n";
-import { type MealKey, useFarfurieStore, useRemaining } from "@/lib/store";
+import { useRemaining } from "@/lib/selectors";
+import { type MealKey, useFarfurieStore } from "@/lib/store";
 
 const meals: MealKey[] = ["breakfast", "lunch", "dinner", "snack"];
 

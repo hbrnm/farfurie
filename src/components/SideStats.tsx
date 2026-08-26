@@ -2,7 +2,8 @@
 
 import { Droplets, Flame } from "lucide-react";
 import { t } from "@/lib/i18n";
-import { useEffectiveGoals, useFarfurieStore } from "@/lib/store";
+import { useEffectiveGoals } from "@/lib/selectors";
+import { useFarfurieStore } from "@/lib/store";
 
 export function SideStats() {
   const locale = useFarfurieStore((s) => s.locale);

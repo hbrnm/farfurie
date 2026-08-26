@@ -1,23 +1,29 @@
 "use client";
 
-import { useShallow } from "zustand/react/shallow";
 import { t } from "@/lib/i18n";
 import { localISO } from "@/lib/dates";
-import { useEffectiveGoals, useFarfurieStore } from "@/lib/store";
+import {
+  useBurnedToday,
+  useCurrentStreak,
+  useEffectiveGoals,
+  useTotals,
+  useWeekKcal,
+} from "@/lib/selectors";
+import { useFarfurieStore } from "@/lib/store";
 
 export function InsightsPanel() {
   const locale = useFarfurieStore((s) => s.locale);
   const today = localISO();
-  const totals = useFarfurieStore(useShallow((s) => s.totalsFor(today)));
+  const totals = useTotals(today);
   const goals = useEffectiveGoals();
-  const streak = useFarfurieStore((s) => s.currentStreak());
+  const streak = useCurrentStreak();
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const mealsLogged = useFarfurieStore(
     (s) => s.entries.filter((e) => e.date === today).length,
   );
   const profile = useFarfurieStore((s) => s.profile);
-  const burned = useFarfurieStore((s) => s.burnedOn(today));
-  const week = useFarfurieStore(useShallow((s) => s.weekKcal()));
+  const burned = useBurnedToday(today);
+  const week = useWeekKcal();
 
   const proteinPct = Math.round((totals.protein / Math.max(goals.protein, 1)) * 100);
   const goalLabel = t(locale, profile.goal);

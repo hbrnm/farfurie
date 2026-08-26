@@ -2,12 +2,13 @@
 
 import { t } from "@/lib/i18n";
 import { localISO } from "@/lib/dates";
+import { useFarfurieStore } from "@/lib/store";
 import {
+  useBurnedToday,
   useEffectiveGoals,
-  useFarfurieStore,
   useRemaining,
   useTotals,
-} from "@/lib/store";
+} from "@/lib/selectors";
 
 export function MacroRing() {
   const locale = useFarfurieStore((s) => s.locale);
@@ -16,7 +17,7 @@ export function MacroRing() {
   const totals = useTotals();
   const remaining = useRemaining();
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
-  const burned = useFarfurieStore((s) => s.burnedToday());
+  const burned = useBurnedToday();
   const remainingLabel =
     selectedDate === localISO() ? t(locale, "remaining") : t(locale, "remainingDay");
 
