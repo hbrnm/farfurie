@@ -6,8 +6,8 @@ import { useEffectiveGoals, useFarfurieStore } from "@/lib/store";
 
 export function SideStats() {
   const locale = useFarfurieStore((s) => s.locale);
-  const waterMl = useFarfurieStore((s) => s.waterMl);
-  const streak = useFarfurieStore((s) => s.streak);
+  const waterMl = useFarfurieStore((s) => s.waterForSelected());
+  const streak = useFarfurieStore((s) => s.currentStreak());
   const addWater = useFarfurieStore((s) => s.addWater);
   const goals = useEffectiveGoals();
   const waterPct = Math.min(100, Math.round((waterMl / goals.waterMl) * 100));

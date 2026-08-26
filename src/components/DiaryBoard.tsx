@@ -11,18 +11,41 @@ const meals: MealKey[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export function DiaryBoard() {
   const locale = useFarfurieStore((s) => s.locale);
-  const entries = useFarfurieStore((s) => s.entries);
+  const selectedDate = useFarfurieStore((s) => s.selectedDate);
+  const allEntries = useFarfurieStore((s) => s.entries);
   const remaining = useRemaining();
   const addFoodToMeal = useFarfurieStore((s) => s.addFoodToMeal);
   const addRecipeToMeal = useFarfurieStore((s) => s.addRecipeToMeal);
   const addEntry = useFarfurieStore((s) => s.addEntry);
+  const addCustomFood = useFarfurieStore((s) => s.addCustomFood);
   const removeEntry = useFarfurieStore((s) => s.removeEntry);
   const [openMeal, setOpenMeal] = useState<MealKey | null>(null);
   const [query, setQuery] = useState("");
   const [showGap, setShowGap] = useState(true);
+  const [customName, setCustomName] = useState("");
+  const [customKcal, setCustomKcal] = useState(200);
+  const [customProtein, setCustomProtein] = useState(10);
+  const [customCarbs, setCustomCarbs] = useState(20);
+  const [customFat, setCustomFat] = useState(8);
 
+  const entries = useMemo(
+    () => allEntries.filter((e) => e.date === selectedDate),
+    [allEntries, selectedDate],
+  );
   const results = useMemo(() => searchFoods(query, locale), [query, locale]);
   const gap = useMemo(() => fillTheGap(remaining), [remaining]);
+  const recent = useMemo(() => {
+    const seen = new Set<string>();
+    const list: typeof allEntries = [];
+    for (let i = allEntries.length - 1; i >= 0; i -= 1) {
+      const e = allEntries[i];
+      if (seen.has(e.nameRo)) continue;
+      seen.add(e.nameRo);
+      list.push(e);
+      if (list.length >= 4) break;
+    }
+    return list;
+  }, [allEntries]);
 
   return (
     <div className="space-y-5">
@@ -98,6 +121,7 @@ export function DiaryBoard() {
                   onClick={() => {
                     setOpenMeal(meal);
                     setQuery("");
+                    setCustomName("");
                   }}
                 >
                   <Plus size={16} />
@@ -162,6 +186,33 @@ export function DiaryBoard() {
               placeholder={t(locale, "searchFood")}
               className="mb-4 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none ring-brand focus:ring-2"
             />
+            {query.trim() === "" && recent.length > 0 && (
+              <div className="mb-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                  {t(locale, "recentFoods")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {recent.map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      className="rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-xs font-semibold hover:border-brand/40"
+                      onClick={() => {
+                        addEntry({
+                          meal: openMeal,
+                          nameRo: e.nameRo,
+                          nameEn: e.nameEn,
+                          macros: e.macros,
+                        });
+                        setOpenMeal(null);
+                      }}
+                    >
+                      {locale === "ro" ? e.nameRo : e.nameEn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <ul className="space-y-2">
               {results.length === 0 && (
                 <li className="text-sm text-ink-soft">{t(locale, "noResults")}</li>
@@ -197,6 +248,54 @@ export function DiaryBoard() {
                 </li>
               ))}
             </ul>
+            <form
+              className="mt-5 space-y-3 rounded-2xl border border-dashed border-[var(--line)] bg-white/60 p-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!customName.trim() || customKcal <= 0) return;
+                addCustomFood(openMeal, customName, {
+                  kcal: customKcal,
+                  protein: customProtein,
+                  carbs: customCarbs,
+                  fat: customFat,
+                });
+                setOpenMeal(null);
+              }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                {t(locale, "customFood")}
+              </p>
+              <input
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder={t(locale, "customName")}
+                className="w-full rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none ring-brand focus:ring-2"
+              />
+              <div className="grid grid-cols-4 gap-2">
+                {(
+                  [
+                    ["kcal", customKcal, setCustomKcal],
+                    ["P", customProtein, setCustomProtein],
+                    ["C", customCarbs, setCustomCarbs],
+                    ["F", customFat, setCustomFat],
+                  ] as const
+                ).map(([label, value, setValue]) => (
+                  <label key={label} className="text-[11px] font-semibold text-ink-soft">
+                    {label}
+                    <input
+                      type="number"
+                      min={0}
+                      value={value}
+                      onChange={(e) => setValue(Number(e.target.value))}
+                      className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-2 py-1.5 text-sm font-medium text-ink"
+                    />
+                  </label>
+                ))}
+              </div>
+              <button type="submit" className="btn btn-primary w-full text-sm">
+                {t(locale, "addCustom")}
+              </button>
+            </form>
           </div>
         </div>
       )}

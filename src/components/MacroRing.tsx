@@ -1,6 +1,7 @@
 "use client";
 
 import { t } from "@/lib/i18n";
+import { localISO } from "@/lib/dates";
 import {
   useEffectiveGoals,
   useFarfurieStore,
@@ -10,11 +11,14 @@ import {
 
 export function MacroRing() {
   const locale = useFarfurieStore((s) => s.locale);
+  const selectedDate = useFarfurieStore((s) => s.selectedDate);
   const goals = useEffectiveGoals();
   const totals = useTotals();
   const remaining = useRemaining();
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const burned = useFarfurieStore((s) => s.burnedToday());
+  const remainingLabel =
+    selectedDate === localISO() ? t(locale, "remaining") : t(locale, "remainingDay");
 
   const budget = goals.kcal + burned;
   const pct = Math.min(100, Math.round((totals.kcal / Math.max(budget, 1)) * 100));
@@ -63,7 +67,7 @@ export function MacroRing() {
           <div className="absolute inset-0 grid place-items-center text-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                {t(locale, "remaining")}
+                {remainingLabel}
               </p>
               <p className="display text-3xl text-brand">
                 {Math.max(0, remaining.kcal)}

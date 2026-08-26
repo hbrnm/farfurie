@@ -1,25 +1,31 @@
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
 import { t } from "@/lib/i18n";
-import {
-  useEffectiveGoals,
-  useFarfurieStore,
-  useTotals,
-} from "@/lib/store";
+import { localISO } from "@/lib/dates";
+import { useEffectiveGoals, useFarfurieStore } from "@/lib/store";
 
 export function InsightsPanel() {
   const locale = useFarfurieStore((s) => s.locale);
-  const totals = useTotals();
+  const today = localISO();
+  const totals = useFarfurieStore(useShallow((s) => s.totalsFor(today)));
   const goals = useEffectiveGoals();
-  const streak = useFarfurieStore((s) => s.streak);
+  const streak = useFarfurieStore((s) => s.currentStreak());
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
-  const entries = useFarfurieStore((s) => s.entries);
+  const mealsLogged = useFarfurieStore(
+    (s) => s.entries.filter((e) => e.date === today).length,
+  );
   const profile = useFarfurieStore((s) => s.profile);
-  const burned = useFarfurieStore((s) => s.burnedToday());
+  const burned = useFarfurieStore((s) => s.burnedOn(today));
+  const week = useFarfurieStore(useShallow((s) => s.weekKcal()));
 
-  const proteinPct = Math.round((totals.protein / goals.protein) * 100);
-  const week = [1800, 2050, 1920, 2210, totals.kcal, 0, 0];
+  const proteinPct = Math.round((totals.protein / Math.max(goals.protein, 1)) * 100);
   const goalLabel = t(locale, profile.goal);
+  const labels =
+    locale === "ro"
+      ? ["L", "Ma", "Mi", "J", "V", "S", "D"]
+      : ["M", "T", "W", "T", "F", "S", "S"];
+  const weekMax = Math.max(goals.kcal, ...week, 1);
 
   return (
     <div className="space-y-6">
@@ -60,26 +66,18 @@ export function InsightsPanel() {
           </p>
         </article>
         <article className="surface p-5">
-          <p className="text-sm text-ink-soft">
-            {locale === "ro" ? "Mese logate azi" : "Meals logged today"}
-          </p>
-          <p className="display mt-1 text-2xl">{entries.length}</p>
+          <p className="text-sm text-ink-soft">{t(locale, "mealsLogged")}</p>
+          <p className="display mt-1 text-2xl">{mealsLogged}</p>
         </article>
       </div>
 
       <section className="surface p-5">
-        <h2 className="display mb-4 text-2xl">
-          {locale === "ro" ? "Calorii — săptămâna asta" : "Calories — this week"}
-        </h2>
+        <h2 className="display mb-4 text-2xl">{t(locale, "weekCalories")}</h2>
         <div className="flex h-40 items-end gap-2">
           {week.map((v, i) => {
-            const h = v === 0 ? 8 : Math.max(12, Math.round((v / 2600) * 100));
-            const labels =
-              locale === "ro"
-                ? ["L", "Ma", "Mi", "J", "V", "S", "D"]
-                : ["M", "T", "W", "T", "F", "S", "S"];
+            const h = v === 0 ? 8 : Math.max(12, Math.round((v / weekMax) * 100));
             return (
-              <div key={i} className="flex flex-1 flex-col items-center gap-2">
+              <div key={labels[i]} className="flex flex-1 flex-col items-center gap-2">
                 <div
                   className="w-full rounded-t-xl bg-gradient-to-t from-brand to-accent transition-all"
                   style={{
