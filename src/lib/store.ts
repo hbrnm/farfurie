@@ -33,7 +33,28 @@ export type DiaryEntry = {
   nameEn: string;
   macros: Macros;
   createdAt: string;
+  grams?: number;
+  foodId?: string;
 };
+
+export type WeightLog = {
+  date: string;
+  kg: number;
+};
+
+export type SavedMeal = {
+  id: string;
+  nameRo: string;
+  nameEn: string;
+  items: Array<{
+    nameRo: string;
+    nameEn: string;
+    macros: Macros;
+    meal: MealKey;
+  }>;
+};
+
+export type ThemeName = "light" | "dark";
 
 export type ShoppingItem = {
   id: string;
@@ -86,6 +107,13 @@ type State = {
   exerciseLogs: ExerciseLog[];
   onboardingDone: boolean;
   weekPlan: WeekPlan;
+  theme: ThemeName;
+  dayNotes: Record<string, string>;
+  weightLogs: WeightLog[];
+  savedMeals: SavedMeal[];
+  recoveryUntil: string | null;
+  lastAddedId: string | null;
+  targetWeightKg: number;
   setLocale: (locale: Locale) => void;
   toggleHoliday: () => void;
   setSelectedDate: (date: string) => void;
@@ -126,6 +154,23 @@ type State = {
   currentStreak: () => number;
   weekKcal: () => number[];
   previousDayHasMeals: () => boolean;
+  isRecovery: () => boolean;
+  toggleTheme: () => void;
+  setDayNote: (date: string, note: string) => void;
+  logWeight: (kg: number) => void;
+  undoLastEntry: () => void;
+  saveMealFromSelected: (meal: MealKey, name: string) => void;
+  addSavedMealToDiary: (id: string) => void;
+  removeSavedMeal: (id: string) => void;
+  startRecovery: () => void;
+  stopRecovery: () => void;
+  addSelectedDayToShopping: () => void;
+  copyMealToDate: (meal: MealKey, targetDate: string) => number;
+  setTargetWeight: (kg: number) => void;
+  saveNamedMeal: (
+    name: string,
+    items: SavedMeal["items"],
+  ) => void;
   fastingStatus: () => {
     protocol: FastingProtocol;
     active: boolean;
@@ -185,6 +230,37 @@ export const useFarfurieStore = create<State>()(
       waterByDate: { [TODAY]: 750, [YESTERDAY]: 1750 },
       onboardingDone: false,
       weekPlan: emptyWeekPlan(),
+      theme: "light",
+      dayNotes: {},
+      weightLogs: [
+        { date: shiftISO(TODAY, -14), kg: 69.4 },
+        { date: shiftISO(TODAY, -7), kg: 68.8 },
+        { date: TODAY, kg: 68 },
+      ],
+      savedMeals: [
+        {
+          id: "saved-birou",
+          nameRo: "Prânz de birou",
+          nameEn: "Office lunch",
+          items: [
+            {
+              meal: "lunch",
+              nameRo: "Conservă ton Scandia",
+              nameEn: "Scandia tuna",
+              macros: { kcal: 120, protein: 27.6, carbs: 0, fat: 1.2 },
+            },
+            {
+              meal: "lunch",
+              nameRo: "Pâine neagră",
+              nameEn: "Dark bread",
+              macros: { kcal: 88, protein: 2.8, carbs: 16, fat: 1 },
+            },
+          ],
+        },
+      ],
+      recoveryUntil: null,
+      lastAddedId: null,
+      targetWeightKg: 64,
       profile: defaultProfile,
       goals: INITIAL_GOALS,
       favoriteRecipeIds: ["ovaz-napolact", "salata-ton"],
@@ -240,12 +316,12 @@ export const useFarfurieStore = create<State>()(
       setLocale: (locale) => set({ locale }),
       toggleHoliday: () => set((s) => ({ holidayMode: !s.holidayMode })),
       setSelectedDate: (date) => {
-        if (date > localISO()) return;
+        if (date > shiftISO(localISO(), 7)) return;
         set({ selectedDate: date });
       },
       shiftSelectedDate: (days) => {
         const next = shiftISO(get().selectedDate, days);
-        if (next > localISO()) return;
+        if (next > shiftISO(localISO(), 7)) return;
         set({ selectedDate: next });
       },
       goToToday: () => set({ selectedDate: localISO() }),
@@ -260,18 +336,21 @@ export const useFarfurieStore = create<State>()(
             },
           };
         }),
-      addEntry: (entry) =>
+      addEntry: (entry) => {
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
         set((s) => ({
+          lastAddedId: id,
           entries: [
             ...s.entries,
             {
               date: s.selectedDate,
               ...entry,
-              id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              id,
               createdAt: new Date().toISOString(),
             },
           ],
-        })),
+        }));
+      },
       addFoodToMeal: (foodId, meal, grams) => {
         const food = foods.find((f) => f.id === foodId);
         if (!food) return;
@@ -279,8 +358,10 @@ export const useFarfurieStore = create<State>()(
         const macros = macrosForGrams(food, g);
         get().addEntry({
           meal,
-          nameRo: food.nameRo,
-          nameEn: food.nameEn,
+          foodId,
+          grams: g,
+          nameRo: `${food.nameRo} · ${g}g`,
+          nameEn: `${food.nameEn} · ${g}g`,
           macros,
         });
       },
@@ -320,7 +401,113 @@ export const useFarfurieStore = create<State>()(
         return from.length;
       },
       removeEntry: (id) =>
-        set((s) => ({ entries: s.entries.filter((e) => e.id !== id) })),
+        set((s) => ({
+          entries: s.entries.filter((e) => e.id !== id),
+          lastAddedId: s.lastAddedId === id ? null : s.lastAddedId,
+        })),
+      undoLastEntry: () => {
+        const id = get().lastAddedId;
+        if (id) get().removeEntry(id);
+      },
+      toggleTheme: () =>
+        set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
+      setDayNote: (date, note) =>
+        set((s) => ({ dayNotes: { ...s.dayNotes, [date]: note } })),
+      logWeight: (kg) => {
+        if (kg < 30 || kg > 250) return;
+        const date = get().selectedDate;
+        set((s) => ({
+          weightLogs: [
+            ...s.weightLogs.filter((w) => w.date !== date),
+            { date, kg: Math.round(kg * 10) / 10 },
+          ].sort((a, b) => a.date.localeCompare(b.date)),
+        }));
+      },
+      saveMealFromSelected: (meal, name) => {
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        const items = get().entries.filter(
+          (e) => e.date === get().selectedDate && e.meal === meal,
+        );
+        if (items.length === 0) return;
+        set((s) => ({
+          savedMeals: [
+            ...s.savedMeals,
+            {
+              id: `meal-${Date.now()}`,
+              nameRo: trimmed,
+              nameEn: trimmed,
+              items: items.map((e) => ({
+                meal: e.meal,
+                nameRo: e.nameRo,
+                nameEn: e.nameEn,
+                macros: e.macros,
+              })),
+            },
+          ],
+        }));
+      },
+      addSavedMealToDiary: (id) => {
+        const meal = get().savedMeals.find((m) => m.id === id);
+        if (!meal) return;
+        meal.items.forEach((item) => get().addEntry({ ...item }));
+      },
+      removeSavedMeal: (id) =>
+        set((s) => ({ savedMeals: s.savedMeals.filter((m) => m.id !== id) })),
+      startRecovery: () =>
+        set({
+          holidayMode: false,
+          recoveryUntil: shiftISO(localISO(), 1),
+        }),
+      stopRecovery: () => set({ recoveryUntil: null }),
+      addSelectedDayToShopping: () => {
+        const date = get().selectedDate;
+        const items = get()
+          .entries.filter((e) => e.date === date)
+          .map((e) => ({
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            nameRo: e.nameRo,
+            nameEn: e.nameEn,
+            checked: false,
+          }));
+        set((s) => ({ shopping: [...s.shopping, ...items] }));
+      },
+      copyMealToDate: (meal, targetDate) => {
+        if (targetDate > shiftISO(localISO(), 7)) return 0;
+        const source = get().selectedDate;
+        const items = get().entries.filter((e) => e.date === source && e.meal === meal);
+        items.forEach((e) =>
+          get().addEntry({
+            date: targetDate,
+            meal: e.meal,
+            nameRo: e.nameRo,
+            nameEn: e.nameEn,
+            macros: e.macros,
+            grams: e.grams,
+            foodId: e.foodId,
+          }),
+        );
+        return items.length;
+      },
+      setTargetWeight: (kg) => {
+        if (kg < 30 || kg > 250) return;
+        set({ targetWeightKg: Math.round(kg * 10) / 10 });
+      },
+      saveNamedMeal: (name, items) => {
+        const trimmed = name.trim();
+        if (!trimmed || items.length === 0) return;
+        set((s) => ({
+          savedMeals: [
+            ...s.savedMeals,
+            {
+              id: `meal-${Date.now()}`,
+              nameRo: trimmed,
+              nameEn: trimmed,
+              items,
+            },
+          ],
+        }));
+      },
       setProfile: (profile) => set({ profile }),
       applyProfileGoals: () => {
         const goals = goalsFromProfile(get().profile);
@@ -416,12 +603,14 @@ export const useFarfurieStore = create<State>()(
       baseGoals: () => get().goals,
       effectiveGoals: () => {
         const base = get().goals;
-        if (!get().holidayMode) return base;
+        const recovery = get().isRecovery();
+        const holiday = get().holidayMode;
+        const kcal = holiday ? Math.round(base.kcal * 1.15) : base.kcal;
         return {
-          kcal: Math.round(base.kcal * 1.15),
-          protein: base.protein,
-          carbs: Math.round(base.carbs * 1.15),
-          fat: Math.round(base.fat * 1.15),
+          kcal,
+          protein: recovery ? Math.round(base.protein * 1.1) : base.protein,
+          carbs: holiday ? Math.round(base.carbs * 1.15) : base.carbs,
+          fat: holiday ? Math.round(base.fat * 1.15) : base.fat,
           waterMl: base.waterMl,
         };
       },
@@ -463,6 +652,10 @@ export const useFarfurieStore = create<State>()(
         const prev = shiftISO(get().selectedDate, -1);
         return get().entries.some((e) => e.date === prev);
       },
+      isRecovery: () => {
+        const until = get().recoveryUntil;
+        return !!until && localISO() <= until;
+      },
       fastingStatus: () => {
         const protocol =
           fastingProtocols.find((p) => p.id === get().fastingProtocolId) ??
@@ -503,11 +696,10 @@ export const useFarfurieStore = create<State>()(
     }),
     {
       name: "farfurie-demo-v3",
-      version: 4,
+      version: 6,
       skipHydration: true,
       migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
-        if (version >= 4) return s as never;
         const today = localISO();
         const stampDate = (row: Record<string, unknown>) => ({
           ...row,
@@ -534,6 +726,13 @@ export const useFarfurieStore = create<State>()(
           exerciseLogs,
           waterByDate,
           selectedDate: today,
+          theme: s.theme === "dark" ? "dark" : "light",
+          dayNotes: s.dayNotes && typeof s.dayNotes === "object" ? s.dayNotes : {},
+          weightLogs: Array.isArray(s.weightLogs) ? s.weightLogs : [],
+          savedMeals: Array.isArray(s.savedMeals) ? s.savedMeals : [],
+          recoveryUntil: typeof s.recoveryUntil === "string" ? s.recoveryUntil : null,
+          lastAddedId: null,
+          targetWeightKg: typeof s.targetWeightKg === "number" ? s.targetWeightKg : 64,
         } as never;
       },
       onRehydrateStorage: () => () => {

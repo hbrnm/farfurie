@@ -65,6 +65,9 @@ export function ShoppingListBoard() {
         <button type="button" className="btn btn-ghost text-sm" onClick={clearShopping}>
           {t(locale, "clearAll")}
         </button>
+        <button type="button" className="btn btn-primary text-sm no-print" onClick={() => window.print()}>
+          {t(locale, "printList")}
+        </button>
       </div>
     </div>
   );

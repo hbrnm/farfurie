@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import {
   CalendarDays,
   PartyPopper,
+  ScanBarcode,
   ShoppingBasket,
   Sparkles,
   Soup,
@@ -20,6 +21,9 @@ const features = [
   { key: "featureHoliday", text: "featureHolidayText", icon: PartyPopper },
   { key: "featurePortions", text: "featurePortionsText", icon: UtensilsCrossed },
   { key: "featureStores", text: "featureStoresText", icon: CalendarDays },
+  { key: "featureScan", text: "featureScanText", icon: ScanBarcode },
+  { key: "featureCoach", text: "featureCoachText", icon: Sparkles },
+  { key: "featureRecovery", text: "featureRecoveryText", icon: PartyPopper },
 ] as const;
 
 export function LandingPage() {

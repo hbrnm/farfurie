@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
-import { formatDiaryDate, localISO } from "@/lib/dates";
+import { formatDiaryDate, localISO, shiftISO } from "@/lib/dates";
 import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
 
@@ -14,6 +14,7 @@ export function DateSwitcher() {
   const copyPreviousDay = useFarfurieStore((s) => s.copyPreviousDay);
   const previousDayHasMeals = useFarfurieStore((s) => s.previousDayHasMeals());
   const isToday = selectedDate === localISO();
+  const canGoForward = selectedDate < shiftISO(localISO(), 7);
   const [copied, setCopied] = useState(false);
 
   return (
@@ -54,7 +55,7 @@ export function DateSwitcher() {
             setCopied(false);
             shiftSelectedDate(1);
           }}
-          disabled={isToday}
+          disabled={!canGoForward}
           aria-label={t(locale, "nextDay")}
         >
           <ChevronRight size={18} />

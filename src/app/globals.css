@@ -135,3 +135,68 @@ h3,
 .hero-grain {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
 }
+
+html.dark {
+  color-scheme: dark;
+  --bg: #121a16;
+  --bg-deep: #0c1310;
+  --ink: #e8f0ea;
+  --ink-soft: #9aada2;
+  --brand: #4caf86;
+  --brand-2: #3d9a6e;
+  --accent: #e8a838;
+  --accent-soft: #c9a056;
+  --surface: #1a2420;
+  --line: rgba(232, 240, 234, 0.12);
+  --danger: #e07a5f;
+  --good: #6dbe86;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+}
+
+html.dark body {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #2a2416 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #1a2e24 0%, transparent 50%),
+    linear-gradient(180deg, var(--bg) 0%, #151c18 40%, var(--bg-deep) 100%);
+}
+
+html.dark .surface {
+  background: color-mix(in srgb, var(--surface) 92%, black);
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/50,
+html.dark .bg-white\/60,
+html.dark .bg-white\/70,
+html.dark .bg-white\/80,
+html.dark .hover\:bg-white:hover,
+html.dark .hover\:bg-white\/60:hover,
+html.dark .hover\:bg-white\/70:hover {
+  background-color: color-mix(in srgb, var(--surface) 78%, black) !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: color-mix(in srgb, var(--surface) 70%, black);
+  color: var(--ink);
+}
+
+html.dark .progress-track {
+  background: rgba(232, 240, 234, 0.12);
+}
+
+@media print {
+  header,
+  nav,
+  .btn,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  .surface {
+    box-shadow: none;
+  }
+}

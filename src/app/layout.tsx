@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Figtree } from "next/font/google";
 import { HydrateStore } from "@/components/HydrateStore";
 import { PwaRegister } from "@/components/PwaRegister";
+import { ThemeSync } from "@/components/ThemeSync";
 import "./globals.css";
 
 const display = Fraunces({
@@ -50,6 +51,7 @@ export default function RootLayout({
     <html lang="ro">
       <body className={`${display.variable} ${body.variable} antialiased`}>
         <HydrateStore>
+          <ThemeSync />
           {children}
           <PwaRegister />
         </HydrateStore>

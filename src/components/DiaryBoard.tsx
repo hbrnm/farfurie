@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Sparkles, X } from "lucide-react";
-import { foodName, foodUnit, searchFoods } from "@/lib/foods";
+import { CopyPlus, Plus, Share2, ShoppingCart, Sparkles, Undo2, X } from "lucide-react";
+import { AddFoodSheet } from "@/components/AddFoodSheet";
 import { fillTheGap } from "@/lib/fillGap";
 import { t } from "@/lib/i18n";
-import { useRemaining } from "@/lib/selectors";
+import { shiftISO } from "@/lib/dates";
+import { plateMacros, plateTemplates } from "@/lib/plates";
+import { dayShareText } from "@/lib/share";
+import { useEffectiveGoals, useRemaining, useTotals } from "@/lib/selectors";
 import { type MealKey, useFarfurieStore } from "@/lib/store";
 
 const meals: MealKey[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -15,41 +18,156 @@ export function DiaryBoard() {
   const selectedDate = useFarfurieStore((s) => s.selectedDate);
   const allEntries = useFarfurieStore((s) => s.entries);
   const remaining = useRemaining();
+  const totals = useTotals();
+  const goals = useEffectiveGoals();
   const addFoodToMeal = useFarfurieStore((s) => s.addFoodToMeal);
   const addRecipeToMeal = useFarfurieStore((s) => s.addRecipeToMeal);
   const addEntry = useFarfurieStore((s) => s.addEntry);
-  const addCustomFood = useFarfurieStore((s) => s.addCustomFood);
   const removeEntry = useFarfurieStore((s) => s.removeEntry);
+  const undoLastEntry = useFarfurieStore((s) => s.undoLastEntry);
+  const lastAddedId = useFarfurieStore((s) => s.lastAddedId);
+  const saveMealFromSelected = useFarfurieStore((s) => s.saveMealFromSelected);
+  const setDayNote = useFarfurieStore((s) => s.setDayNote);
+  const dayNotes = useFarfurieStore((s) => s.dayNotes);
+  const addSelectedDayToShopping = useFarfurieStore((s) => s.addSelectedDayToShopping);
+  const recovery = useFarfurieStore((s) => s.isRecovery());
+  const startRecovery = useFarfurieStore((s) => s.startRecovery);
+  const stopRecovery = useFarfurieStore((s) => s.stopRecovery);
+  const holidayMode = useFarfurieStore((s) => s.holidayMode);
+  const copyMealToDate = useFarfurieStore((s) => s.copyMealToDate);
+  const waterMl = useFarfurieStore((s) => s.waterForSelected());
+  const burned = useFarfurieStore((s) => s.burnedToday());
   const [openMeal, setOpenMeal] = useState<MealKey | null>(null);
-  const [query, setQuery] = useState("");
   const [showGap, setShowGap] = useState(true);
-  const [customName, setCustomName] = useState("");
-  const [customKcal, setCustomKcal] = useState(200);
-  const [customProtein, setCustomProtein] = useState(10);
-  const [customCarbs, setCustomCarbs] = useState(20);
-  const [customFat, setCustomFat] = useState(8);
+  const [saveName, setSaveName] = useState("");
+  const [saveFor, setSaveFor] = useState<MealKey>("lunch");
+  const [shareMsg, setShareMsg] = useState("");
+  const [copiedMeal, setCopiedMeal] = useState<MealKey | null>(null);
 
   const entries = useMemo(
     () => allEntries.filter((e) => e.date === selectedDate),
     [allEntries, selectedDate],
   );
-  const results = useMemo(() => searchFoods(query, locale), [query, locale]);
   const gap = useMemo(() => fillTheGap(remaining), [remaining]);
-  const recent = useMemo(() => {
-    const seen = new Set<string>();
-    const list: typeof allEntries = [];
-    for (let i = allEntries.length - 1; i >= 0; i -= 1) {
-      const e = allEntries[i];
-      if (seen.has(e.nameRo)) continue;
-      seen.add(e.nameRo);
-      list.push(e);
-      if (list.length >= 4) break;
+  const note = dayNotes[selectedDate] ?? "";
+
+  const share = async () => {
+    const text = dayShareText({
+      locale,
+      date: selectedDate,
+      entries,
+      totals,
+      goalKcal: goals.kcal,
+      burned,
+      waterMl,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+      setShareMsg(t(locale, "copiedShare"));
+    } catch {
+      setShareMsg(text);
     }
-    return list;
-  }, [allEntries]);
+    window.setTimeout(() => setShareMsg(""), 2500);
+  };
 
   return (
     <div className="space-y-5">
+      {recovery && (
+        <section className="surface border-brand/40 p-4">
+          <p className="font-semibold text-brand">{t(locale, "recovery")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "recoveryOn")}</p>
+          <button type="button" className="btn btn-ghost mt-3 !px-3 !py-1.5 text-sm" onClick={stopRecovery}>
+            {t(locale, "recoveryStop")}
+          </button>
+        </section>
+      )}
+      {holidayMode && !recovery && (
+        <section className="surface border-accent/40 p-4">
+          <p className="font-semibold">{t(locale, "holidays")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "featureRecoveryText")}</p>
+          <button type="button" className="btn btn-primary mt-3 text-sm" onClick={startRecovery}>
+            {t(locale, "recoveryStart")}
+          </button>
+        </section>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn btn-ghost !px-3 !py-2 text-sm"
+          disabled={!lastAddedId}
+          onClick={undoLastEntry}
+        >
+          <Undo2 size={14} />
+          {t(locale, "undo")}
+        </button>
+        <button type="button" className="btn btn-ghost !px-3 !py-2 text-sm" onClick={() => void share()}>
+          <Share2 size={14} />
+          {t(locale, "shareDay")}
+        </button>
+        <button type="button" className="btn btn-ghost !px-3 !py-2 text-sm" onClick={addSelectedDayToShopping}>
+          <ShoppingCart size={14} />
+          {t(locale, "shopFromDay")}
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost !px-3 !py-2 text-sm"
+          onClick={() => addFoodToMeal("bere-silva", "snack")}
+        >
+          {t(locale, "logBeer")}
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost !px-3 !py-2 text-sm"
+          onClick={() => addFoodToMeal("vin-feteasca", "snack")}
+        >
+          {t(locale, "logWine")}
+        </button>
+      </div>
+      {shareMsg && <p className="text-sm font-semibold text-brand">{shareMsg}</p>}
+
+      <label className="surface block p-4">
+        <span className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          {t(locale, "dayNote")}
+        </span>
+        <textarea
+          value={note}
+          onChange={(e) => setDayNote(selectedDate, e.target.value)}
+          placeholder={t(locale, "dayNotePh")}
+          rows={2}
+          className="mt-2 w-full resize-none rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none"
+        />
+      </label>
+
+      <section className="surface p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          {t(locale, "plateEstimate")}
+        </p>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {plateTemplates.map((plate) => {
+            const macros = plateMacros(plate.items);
+            return (
+              <button
+                key={plate.id}
+                type="button"
+                className="rounded-2xl border border-[var(--line)] bg-white/70 p-3 text-left hover:border-brand/40"
+                onClick={() => {
+                  plate.items.forEach((item) => addFoodToMeal(item.foodId, "lunch", item.grams));
+                }}
+              >
+                <p className="font-semibold">{locale === "ro" ? plate.nameRo : plate.nameEn}</p>
+                <p className="mt-1 text-xs text-ink-soft">
+                  {locale === "ro" ? plate.reasonRo : plate.reasonEn}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-brand">
+                  {t(locale, "addPlate")} · {macros.kcal} kcal · P {macros.protein}g
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {showGap && gap.length > 0 && (
         <section className="surface animate-rise overflow-hidden p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
@@ -116,19 +234,35 @@ export function DiaryBoard() {
                   <h3 className="display text-xl">{t(locale, meal)}</h3>
                   <p className="text-xs text-ink-soft">{mealKcal} kcal</p>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-ghost !px-3 !py-2 text-sm"
-                  onClick={() => {
-                    setOpenMeal(meal);
-                    setQuery("");
-                    setCustomName("");
-                  }}
-                >
-                  <Plus size={16} />
-                  {t(locale, "add")}
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    className="rounded-full p-2 text-ink-soft hover:bg-white disabled:opacity-30"
+                    disabled={mealEntries.length === 0}
+                    title={t(locale, "copyTomorrow")}
+                    onClick={() => {
+                      const n = copyMealToDate(meal, shiftISO(selectedDate, 1));
+                      if (n > 0) {
+                        setCopiedMeal(meal);
+                        window.setTimeout(() => setCopiedMeal(null), 1800);
+                      }
+                    }}
+                  >
+                    <CopyPlus size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost !px-3 !py-2 text-sm"
+                    onClick={() => setOpenMeal(meal)}
+                  >
+                    <Plus size={16} />
+                    {t(locale, "add")}
+                  </button>
+                </div>
               </div>
+              {copiedMeal === meal && (
+                <p className="mb-2 text-xs font-semibold text-brand">{t(locale, "copiedTomorrow")}</p>
+              )}
               {mealEntries.length === 0 ? (
                 <p className="rounded-2xl bg-white/50 px-3 py-4 text-sm text-ink-soft">
                   {t(locale, "emptyMeal")}
@@ -166,140 +300,42 @@ export function DiaryBoard() {
         })}
       </div>
 
-      {openMeal && (
-        <div className="fixed inset-0 z-50 grid place-items-end bg-black/35 p-0 md:place-items-center md:p-6">
-          <div className="surface max-h-[85vh] w-full max-w-lg overflow-auto rounded-t-3xl p-5 md:rounded-3xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="display text-2xl">
-                {t(locale, "addFood")} · {t(locale, openMeal)}
-              </h3>
-              <button
-                type="button"
-                className="rounded-full p-2 hover:bg-white"
-                onClick={() => setOpenMeal(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t(locale, "searchFood")}
-              className="mb-4 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none ring-brand focus:ring-2"
-            />
-            {query.trim() === "" && recent.length > 0 && (
-              <div className="mb-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  {t(locale, "recentFoods")}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {recent.map((e) => (
-                    <button
-                      key={e.id}
-                      type="button"
-                      className="rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-xs font-semibold hover:border-brand/40"
-                      onClick={() => {
-                        addEntry({
-                          meal: openMeal,
-                          nameRo: e.nameRo,
-                          nameEn: e.nameEn,
-                          macros: e.macros,
-                        });
-                        setOpenMeal(null);
-                      }}
-                    >
-                      {locale === "ro" ? e.nameRo : e.nameEn}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <ul className="space-y-2">
-              {results.length === 0 && (
-                <li className="text-sm text-ink-soft">{t(locale, "noResults")}</li>
-              )}
-              {results.map((food) => (
-                <li key={food.id}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/80 px-3 py-3 text-left hover:border-brand/40"
-                    onClick={() => {
-                      addFoodToMeal(food.id, openMeal);
-                      setOpenMeal(null);
-                    }}
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {foodName(food, locale)}
-                        {food.brand ? (
-                          <span className="ml-2 text-xs font-medium text-ink-soft">
-                            {food.brand}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="text-xs text-ink-soft">
-                        {foodUnit(food, locale)} · {food.defaultGrams}g
-                      </p>
-                    </div>
-                    <span className="text-sm font-semibold text-brand">
-                      {Math.round((food.per100g.kcal * food.defaultGrams) / 100)}{" "}
-                      kcal
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <form
-              className="mt-5 space-y-3 rounded-2xl border border-dashed border-[var(--line)] bg-white/60 p-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!customName.trim() || customKcal <= 0) return;
-                addCustomFood(openMeal, customName, {
-                  kcal: customKcal,
-                  protein: customProtein,
-                  carbs: customCarbs,
-                  fat: customFat,
-                });
-                setOpenMeal(null);
-              }}
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                {t(locale, "customFood")}
-              </p>
-              <input
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder={t(locale, "customName")}
-                className="w-full rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none ring-brand focus:ring-2"
-              />
-              <div className="grid grid-cols-4 gap-2">
-                {(
-                  [
-                    ["kcal", customKcal, setCustomKcal],
-                    ["P", customProtein, setCustomProtein],
-                    ["C", customCarbs, setCustomCarbs],
-                    ["F", customFat, setCustomFat],
-                  ] as const
-                ).map(([label, value, setValue]) => (
-                  <label key={label} className="text-[11px] font-semibold text-ink-soft">
-                    {label}
-                    <input
-                      type="number"
-                      min={0}
-                      value={value}
-                      onChange={(e) => setValue(Number(e.target.value))}
-                      className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-2 py-1.5 text-sm font-medium text-ink"
-                    />
-                  </label>
-                ))}
-              </div>
-              <button type="submit" className="btn btn-primary w-full text-sm">
-                {t(locale, "addCustom")}
-              </button>
-            </form>
-          </div>
+      <section className="surface p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          {t(locale, "saveMeal")}
+        </p>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+          <select
+            className="rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm"
+            value={saveFor}
+            onChange={(e) => setSaveFor(e.target.value as MealKey)}
+          >
+            {meals.map((m) => (
+              <option key={m} value={m}>
+                {t(locale, m)}
+              </option>
+            ))}
+          </select>
+          <input
+            value={saveName}
+            onChange={(e) => setSaveName(e.target.value)}
+            placeholder={t(locale, "mealName")}
+            className="flex-1 rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            className="btn btn-primary text-sm"
+            onClick={() => {
+              saveMealFromSelected(saveFor, saveName);
+              setSaveName("");
+            }}
+          >
+            {t(locale, "saveMeal")}
+          </button>
         </div>
-      )}
+      </section>
+
+      {openMeal && <AddFoodSheet meal={openMeal} onClose={() => setOpenMeal(null)} />}
     </div>
   );
 }

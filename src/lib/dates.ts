@@ -70,3 +70,13 @@ export type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
 export function weekdayKeyFromISO(iso: string): WeekdayKey {
   return WEEKDAY_KEYS[parseISO(iso).getDay()];
 }
+
+/** Inclusive range of `n` local dates ending on `from`. */
+export function lastNDates(n: number, from = localISO()): string[] {
+  return Array.from({ length: n }, (_, i) => shiftISO(from, -(n - 1 - i)));
+}
+
+export function isWeekendISO(iso: string): boolean {
+  const day = parseISO(iso).getDay();
+  return day === 0 || day === 6;
+}

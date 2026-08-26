@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Timer, X } from "lucide-react";
+import { Moon, Sun, Timer, X } from "lucide-react";
 import { fastingProtocols, exercises } from "@/lib/activity";
 import {
   calcBmr,
@@ -38,10 +38,20 @@ export function ProfileBoard() {
   const exerciseLogs = useFarfurieStore((s) => s.exerciseLogs);
   const burnedTodayKcal = useBurnedToday(localISO());
   const favoriteRecipeIds = useFarfurieStore((s) => s.favoriteRecipeIds);
+  const theme = useFarfurieStore((s) => s.theme);
+  const toggleTheme = useFarfurieStore((s) => s.toggleTheme);
+  const logWeight = useFarfurieStore((s) => s.logWeight);
+  const weightLogs = useFarfurieStore((s) => s.weightLogs);
+  const targetWeightKg = useFarfurieStore((s) => s.targetWeightKg);
+  const setTargetWeight = useFarfurieStore((s) => s.setTargetWeight);
+  const recovery = useFarfurieStore((s) => s.isRecovery());
+  const startRecovery = useFarfurieStore((s) => s.startRecovery);
+  const stopRecovery = useFarfurieStore((s) => s.stopRecovery);
 
   const [draft, setDraft] = useState<ProfileInput>(profile);
   const [exId, setExId] = useState(exercises[0].id);
   const [mins, setMins] = useState(30);
+  const [kg, setKg] = useState(profile.weightKg);
 
   useEffect(() => {
     setDraft(profile);
@@ -72,6 +82,62 @@ export function ProfileBoard() {
         <h1 className="display text-3xl md:text-4xl">{t(locale, "profileTitle")}</h1>
         <p className="mt-2 max-w-2xl text-ink-soft">{t(locale, "profileDesc")}</p>
       </header>
+
+      <section className="surface flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <p className="font-semibold">{t(locale, "darkMode")}</p>
+          <p className="text-sm text-ink-soft">
+            {theme === "dark" ? (locale === "ro" ? "Activ" : "On") : locale === "ro" ? "Dezactivat" : "Off"}
+          </p>
+        </div>
+        <button type="button" className="btn btn-ghost text-sm" onClick={toggleTheme}>
+          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          {t(locale, "darkMode")}
+        </button>
+      </section>
+
+      <section className="surface grid gap-4 p-5 md:grid-cols-2">
+        <div>
+          <h2 className="display text-2xl">{t(locale, "logWeight")}</h2>
+          <div className="mt-3 flex gap-2">
+            <input
+              type="number"
+              min={30}
+              max={250}
+              step={0.1}
+              value={kg}
+              onChange={(e) => setKg(Number(e.target.value))}
+              className="w-28 rounded-2xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm"
+            />
+            <button type="button" className="btn btn-primary text-sm" onClick={() => logWeight(kg)}>
+              {t(locale, "logWeight")}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-ink-soft">
+            {weightLogs.length} {locale === "ro" ? "înregistrări" : "logs"}
+          </p>
+        </div>
+        <NumberField
+          label={t(locale, "targetWeight")}
+          value={targetWeightKg}
+          onChange={setTargetWeight}
+        />
+        <div className="md:col-span-2">
+          <h2 className="display text-2xl">{t(locale, "recovery")}</h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            {recovery ? t(locale, "recoveryOn") : t(locale, "featureRecoveryText")}
+          </p>
+          {recovery ? (
+            <button type="button" className="btn btn-ghost mt-3 text-sm" onClick={stopRecovery}>
+              {t(locale, "recoveryStop")}
+            </button>
+          ) : (
+            <button type="button" className="btn btn-primary mt-3 text-sm" onClick={startRecovery}>
+              {t(locale, "recoveryStart")}
+            </button>
+          )}
+        </div>
+      </section>
 
       <section className="surface grid gap-5 p-5 md:grid-cols-2">
         <Field label={t(locale, "sex")}>
@@ -253,6 +319,22 @@ export function ProfileBoard() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2">
+        <Link href="/app/scan" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navScan")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "moreScan")}</p>
+        </Link>
+        <Link href="/app/coach" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navCoach")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "moreCoach")}</p>
+        </Link>
+        <Link href="/app/builder" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navBuilder")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "builderDesc")}</p>
+        </Link>
+        <Link href="/app/compare" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navCompare")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "compareDesc")}</p>
+        </Link>
         <Link href="/app/pot" className="surface block p-5 transition hover:-translate-y-0.5">
           <p className="display text-xl">{t(locale, "navPot")}</p>
           <p className="mt-1 text-sm text-ink-soft">{t(locale, "openPot")}</p>

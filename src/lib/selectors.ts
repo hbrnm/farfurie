@@ -7,16 +7,18 @@ import { useFarfurieStore, type MealKey } from "./store";
 export function useEffectiveGoals() {
   const goals = useFarfurieStore((s) => s.goals);
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
+  const recoveryUntil = useFarfurieStore((s) => s.recoveryUntil);
   return useMemo(() => {
-    if (!holidayMode) return goals;
+    const recovery = !!recoveryUntil && localISO() <= recoveryUntil;
+    const kcal = holidayMode ? Math.round(goals.kcal * 1.15) : goals.kcal;
     return {
-      kcal: Math.round(goals.kcal * 1.15),
-      protein: goals.protein,
-      carbs: Math.round(goals.carbs * 1.15),
-      fat: Math.round(goals.fat * 1.15),
+      kcal,
+      protein: recovery ? Math.round(goals.protein * 1.1) : goals.protein,
+      carbs: holidayMode ? Math.round(goals.carbs * 1.15) : goals.carbs,
+      fat: holidayMode ? Math.round(goals.fat * 1.15) : goals.fat,
       waterMl: goals.waterMl,
     };
-  }, [goals, holidayMode]);
+  }, [goals, holidayMode, recoveryUntil]);
 }
 
 export function useDayEntries(date?: string) {
