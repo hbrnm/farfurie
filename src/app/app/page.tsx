@@ -3,6 +3,9 @@
 import { DiaryBoard } from "@/components/DiaryBoard";
 import { MacroRing } from "@/components/MacroRing";
 import { SideStats } from "@/components/SideStats";
+import { CustomFoodForm } from "@/modules/calorie-counter/CustomFoodForm";
+import { HomeWidgets } from "@/modules/calorie-counter/HomeWidgets";
+import { LoggingDock } from "@/modules/calorie-counter/LoggingDock";
 import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
 
@@ -19,12 +22,17 @@ export default function DiaryPage() {
             : "Today · Romanian portions · smart budget"}
         </p>
       </header>
+      <HomeWidgets />
       <div className="grid gap-5 lg:grid-cols-[1.4fr_0.8fr]">
         <div className="space-y-5">
           <MacroRing />
+          <LoggingDock meal="lunch" />
           <DiaryBoard />
         </div>
-        <SideStats />
+        <div className="space-y-5">
+          <SideStats />
+          <CustomFoodForm />
+        </div>
       </div>
     </div>
   );

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BookOpen,
   CalendarRange,
-  ClipboardList,
+  Crown,
   Home,
+  Timer,
+  TrendingUp,
   UserRound,
 } from "lucide-react";
 import { ClientOnly } from "@/components/ClientOnly";
@@ -17,8 +18,8 @@ import { useFarfurieStore } from "@/lib/store";
 const links = [
   { href: "/app", key: "navDiary" as const, icon: Home },
   { href: "/app/plan", key: "navPlan" as const, icon: CalendarRange },
-  { href: "/app/recipes", key: "navRecipes" as const, icon: BookOpen },
-  { href: "/app/list", key: "navList" as const, icon: ClipboardList },
+  { href: "/app/progress", key: "navInsights" as const, icon: TrendingUp },
+  { href: "/app/fasting", key: "navFasting" as const, icon: Timer, premium: true },
   { href: "/app/profile", key: "navProfile" as const, icon: UserRound },
 ];
 
@@ -36,6 +37,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const setLocale = useFarfurieStore((s) => s.setLocale);
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const toggleHoliday = useFarfurieStore((s) => s.toggleHoliday);
+  const tier = useFarfurieStore((s) => s.subscriptionTier);
 
   return (
     <div className="min-h-screen pb-28 md:pb-10">
@@ -46,8 +48,8 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
             Farfurie
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
-            {links.map(({ href, key, icon: Icon }) => {
-              const active = pathname === href;
+            {links.map(({ href, key, icon: Icon, premium }) => {
+              const active = href === "/app" ? pathname === href : pathname.startsWith(href);
               return (
                 <Link
                   key={href}
@@ -60,11 +62,15 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
                 >
                   <Icon size={16} />
                   {t(locale, key)}
+                  {premium && tier !== "premium" ? <Crown size={12} /> : null}
                 </Link>
               );
             })}
           </nav>
           <div className="flex items-center gap-2">
+            <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
+              {tier === "premium" ? t(locale, "premium") : t(locale, "free")}
+            </span>
             <button
               type="button"
               onClick={toggleHoliday}
@@ -102,7 +108,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] backdrop-blur-xl md:hidden">
         <div className="mx-auto grid max-w-shell grid-cols-5 gap-1 px-2 py-2">
           {links.map(({ href, key, icon: Icon }) => {
-            const active = pathname === href;
+            const active = href === "/app" ? pathname === href : pathname.startsWith(href);
             return (
               <Link
                 key={href}

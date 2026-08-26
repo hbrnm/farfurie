@@ -12,6 +12,7 @@ import {
   sumMacros,
   type MealKey,
 } from "./diary";
+import { canUse } from "./entitlements";
 import { useFarfurieStore } from "./store";
 
 export function useTodayKey() {
@@ -33,16 +34,25 @@ export function useTodayKey() {
 export function useEffectiveGoals() {
   const goals = useFarfurieStore((s) => s.goals);
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
+  const customMacros = useFarfurieStore((s) => s.customMacros);
+  const useCustomMacros = useFarfurieStore((s) => s.useCustomMacros);
+  const waterGoalMl = useFarfurieStore((s) => s.waterGoalMl);
+  const tier = useFarfurieStore((s) => s.subscriptionTier);
   return useMemo(() => {
-    if (!holidayMode) return goals;
+    const base =
+      useCustomMacros && customMacros && canUse(tier, "customMacros")
+        ? customMacros
+        : goals;
+    const withWater = { ...base, waterMl: waterGoalMl ?? base.waterMl };
+    if (!holidayMode) return withWater;
     return {
-      kcal: Math.round(goals.kcal * 1.15),
-      protein: goals.protein,
-      carbs: Math.round(goals.carbs * 1.15),
-      fat: Math.round(goals.fat * 1.15),
-      waterMl: goals.waterMl,
+      kcal: Math.round(withWater.kcal * 1.15),
+      protein: withWater.protein,
+      carbs: Math.round(withWater.carbs * 1.15),
+      fat: Math.round(withWater.fat * 1.15),
+      waterMl: withWater.waterMl,
     };
-  }, [goals, holidayMode]);
+  }, [goals, holidayMode, customMacros, useCustomMacros, waterGoalMl, tier]);
 }
 
 export function useTodayEntries() {

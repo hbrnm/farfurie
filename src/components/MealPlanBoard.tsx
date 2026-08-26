@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { recipeName, recipes } from "@/lib/recipes";
+import { PremiumGate } from "@/components/PremiumGate";
 import { t, type TranslationKey } from "@/lib/i18n";
 import {
   WEEK_DAYS,
@@ -29,6 +30,9 @@ export function MealPlanBoard() {
   const setPlanSlot = useFarfurieStore((s) => s.setPlanSlot);
   const applyTodayPlanToDiary = useFarfurieStore((s) => s.applyTodayPlanToDiary);
   const addWeekPlanToShopping = useFarfurieStore((s) => s.addWeekPlanToShopping);
+  const generateAutoPlan = useFarfurieStore((s) => s.generateAutoPlan);
+  const reminders = useFarfurieStore((s) => s.reminders);
+  const setReminders = useFarfurieStore((s) => s.setReminders);
   const [picking, setPicking] = useState<{ day: DayKey; meal: MealKey } | null>(
     null,
   );
@@ -57,17 +61,49 @@ export function MealPlanBoard() {
         >
           {t(locale, "applyToday")}
         </button>
-        <button
-          type="button"
-          className="btn btn-ghost text-sm"
-          onClick={() => {
-            addWeekPlanToShopping();
-            setNotice(t(locale, "listUpdated"));
-          }}
+        <PremiumGate
+          feature="autoMealPlan"
+          fallback={
+            <span className="btn btn-ghost text-sm">{t(locale, "autoPlan")}</span>
+          }
         >
-          {t(locale, "planToList")}
-        </button>
+          <button
+            type="button"
+            className="btn btn-ghost text-sm"
+            onClick={() => {
+              const n = generateAutoPlan();
+              setNotice(n ? t(locale, "planAdded") : t(locale, "planApplied"));
+            }}
+          >
+            {t(locale, "autoPlan")}
+          </button>
+        </PremiumGate>
+        <PremiumGate
+          feature="autoShopping"
+          fallback={
+            <span className="btn btn-ghost text-sm">{t(locale, "planToList")}</span>
+          }
+        >
+          <button
+            type="button"
+            className="btn btn-ghost text-sm"
+            onClick={() => {
+              addWeekPlanToShopping();
+              setNotice(t(locale, "listUpdated"));
+            }}
+          >
+            {t(locale, "planToList")}
+          </button>
+        </PremiumGate>
       </div>
+      <label className="flex items-center gap-2 text-sm text-ink-soft">
+        <input
+          type="checkbox"
+          checked={reminders.meals}
+          onChange={(e) => setReminders({ ...reminders, meals: e.target.checked })}
+        />
+        {t(locale, "reminders")}
+      </label>
       {notice && <p className="text-sm font-semibold text-brand">{notice}</p>}
 
       <div className="space-y-4">

@@ -11,6 +11,7 @@ import {
   useWeekKcal,
 } from "@/lib/selectors";
 import { useFarfurieStore } from "@/lib/store";
+import { WeightCard, PremiumProgressExtras } from "@/modules/progress-tracker/ProgressExtras";
 
 export function InsightsPanel() {
   const locale = useFarfurieStore((s) => s.locale);
@@ -94,6 +95,9 @@ export function InsightsPanel() {
           })}
         </div>
       </section>
+
+      <WeightCard />
+      <PremiumProgressExtras />
 
       {holidayMode && (
         <section className="surface border-accent/40 p-5">

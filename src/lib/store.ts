@@ -3,8 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Locale } from "./i18n";
-import type { Macros } from "./foods";
-import { foods, macrosForGrams } from "./foods";
+import { foods, macrosForGrams, type Food, type Macros } from "./foods";
 import { recipes } from "./recipes";
 import {
   calcBmr,
@@ -28,6 +27,8 @@ import {
   type MealKey,
 } from "./diary";
 import { defaultPotMembers, type PotMember } from "./pot";
+import type { SubscriptionTier, WeightLog, BodyFatLog, BodyMeasurements, ProgressPhoto, DietType, CustomFoodInput } from "@/domain/models";
+import { canUse } from "./entitlements";
 
 export type { MealKey, PotMember };
 
@@ -42,6 +43,8 @@ export type DiaryEntry = {
   recipeId?: string;
   foodId?: string;
   grams?: number;
+  source?: "text" | "barcode" | "search" | "recipe" | "custom" | "photo" | "voice" | "ai";
+  barcode?: string;
 };
 
 export type ShoppingItem = {
@@ -95,6 +98,17 @@ type State = {
   onboardingDone: boolean;
   weekPlan: WeekPlan;
   potMembers: PotMember[];
+  subscriptionTier: SubscriptionTier;
+  customMacros: (Macros & { waterMl: number }) | null;
+  useCustomMacros: boolean;
+  waterGoalMl: number | null;
+  customFoods: Food[];
+  weightLogs: WeightLog[];
+  bodyFatLogs: BodyFatLog[];
+  measurements: BodyMeasurements[];
+  progressPhotos: ProgressPhoto[];
+  dietType: DietType | null;
+  reminders: { meals: boolean; water: boolean; weigh: boolean };
   setLocale: (locale: Locale) => void;
   toggleHoliday: () => void;
   addWater: () => void;
@@ -122,6 +136,18 @@ type State = {
   logExercise: (exerciseId: string, minutes: number) => void;
   removeExercise: (id: string) => void;
   setPotMembers: (members: PotMember[]) => void;
+  setSubscriptionTier: (tier: SubscriptionTier) => void;
+  setCustomMacros: (macros: (Macros & { waterMl: number }) | null) => void;
+  setUseCustomMacros: (on: boolean) => void;
+  setWaterGoalMl: (ml: number) => void;
+  addCustomFood: (food: CustomFoodInput) => void;
+  addWeightLog: (kg: number, dateKey?: string) => void;
+  addBodyFatLog: (percent: number) => void;
+  addMeasurements: (m: Omit<BodyMeasurements, "id" | "createdAt">) => void;
+  addProgressPhoto: (dataUrl: string) => void;
+  setDietType: (diet: DietType | null) => void;
+  setReminders: (r: { meals: boolean; water: boolean; weigh: boolean }) => void;
+  generateAutoPlan: () => number;
   resetToday: () => void;
   resetAllLogs: () => void;
   exportPayload: () => Record<string, unknown>;
@@ -189,6 +215,17 @@ export const useFarfurieStore = create<State>()(
       exerciseLogs: [],
       entries: [],
       potMembers: defaultPotMembers(),
+      subscriptionTier: "free",
+      customMacros: null,
+      useCustomMacros: false,
+      waterGoalMl: null,
+      customFoods: [],
+      weightLogs: [],
+      bodyFatLogs: [],
+      measurements: [],
+      progressPhotos: [],
+      dietType: null,
+      reminders: { meals: false, water: false, weigh: false },
       setLocale: (locale) => set({ locale }),
       toggleHoliday: () => set((s) => ({ holidayMode: !s.holidayMode })),
       addWater: () =>
@@ -218,7 +255,9 @@ export const useFarfurieStore = create<State>()(
           };
         }),
       addFoodToMeal: (foodId, meal, grams) => {
-        const food = foods.find((f) => f.id === foodId);
+        const food =
+          foods.find((f) => f.id === foodId) ??
+          get().customFoods.find((f) => f.id === foodId);
         if (!food) return;
         const g = grams ?? food.defaultGrams;
         const macros = macrosForGrams(food, g);
@@ -229,6 +268,7 @@ export const useFarfurieStore = create<State>()(
           macros,
           foodId,
           grams: g,
+          source: "search",
         });
       },
       addRecipeToMeal: (recipeId, meal) => {
@@ -240,6 +280,7 @@ export const useFarfurieStore = create<State>()(
           nameEn: recipe.nameEn,
           macros: recipe.perServing,
           recipeId,
+          source: "recipe",
         });
       },
       removeEntry: (id) =>
@@ -362,6 +403,87 @@ export const useFarfurieStore = create<State>()(
           exerciseLogs: s.exerciseLogs.filter((e) => e.id !== id),
         })),
       setPotMembers: (members) => set({ potMembers: members }),
+      setSubscriptionTier: (tier) => set({ subscriptionTier: tier }),
+      setCustomMacros: (macros) => set({ customMacros: macros, useCustomMacros: Boolean(macros) }),
+      setUseCustomMacros: (on) => set({ useCustomMacros: on }),
+      setWaterGoalMl: (ml) => set({ waterGoalMl: Math.min(5000, Math.max(500, Math.round(ml))) }),
+      addCustomFood: (input) =>
+        set((s) => ({
+          customFoods: [
+            ...s.customFoods,
+            {
+              id: `custom-${newId()}`,
+              nameRo: input.nameRo,
+              nameEn: input.nameEn || input.nameRo,
+              category: "custom",
+              per100g: input.per100g,
+              defaultGrams: input.defaultGrams || 100,
+              unitRo: "porție",
+              unitEn: "serving",
+              tags: ["custom"],
+              barcode: input.barcode,
+            },
+          ],
+        })),
+      addWeightLog: (kg, dateKey) =>
+        set((s) => ({
+          weightLogs: [
+            ...s.weightLogs.filter((w) => w.dateKey !== (dateKey ?? localDateKey())),
+            {
+              id: newId(),
+              dateKey: dateKey ?? localDateKey(),
+              kg,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        })),
+      addBodyFatLog: (percent) =>
+        set((s) => ({
+          bodyFatLogs: [
+            ...s.bodyFatLogs,
+            {
+              id: newId(),
+              dateKey: localDateKey(),
+              percent,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        })),
+      addMeasurements: (m) =>
+        set((s) => ({
+          measurements: [
+            ...s.measurements,
+            { ...m, id: newId(), createdAt: new Date().toISOString() },
+          ],
+        })),
+      addProgressPhoto: (dataUrl) =>
+        set((s) => ({
+          progressPhotos: [
+            ...s.progressPhotos.slice(-3),
+            {
+              id: newId(),
+              dateKey: localDateKey(),
+              dataUrl,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        })),
+      setDietType: (diet) => set({ dietType: diet }),
+      setReminders: (r) => set({ reminders: r }),
+      generateAutoPlan: () => {
+        if (!canUse(get().subscriptionTier, "autoMealPlan")) return 0;
+        const goals = get().effectiveGoals();
+        const picks = recipes.slice(0, 4);
+        const meals: MealKey[] = ["breakfast", "lunch", "dinner", "snack"];
+        const day = todayDayKey();
+        picks.forEach((recipe, i) => {
+          const meal = meals[i] ?? "snack";
+          if (recipe.perServing.kcal < goals.kcal) {
+            get().setPlanSlot(day, meal, recipe.id);
+          }
+        });
+        return picks.length;
+      },
       resetToday: () =>
         set((s) => {
           const day = localDateKey();
@@ -400,14 +522,22 @@ export const useFarfurieStore = create<State>()(
       gapMeal: () => pickGapMeal(get().todayEntries()),
       baseGoals: () => get().goals,
       effectiveGoals: () => {
-        const base = get().goals;
-        if (!get().holidayMode) return base;
+        const s = get();
+        const base =
+          s.useCustomMacros && s.customMacros && canUse(s.subscriptionTier, "customMacros")
+            ? s.customMacros
+            : s.goals;
+        const withWater = {
+          ...base,
+          waterMl: s.waterGoalMl ?? base.waterMl,
+        };
+        if (!s.holidayMode) return withWater;
         return {
-          kcal: Math.round(base.kcal * 1.15),
-          protein: base.protein,
-          carbs: Math.round(base.carbs * 1.15),
-          fat: Math.round(base.fat * 1.15),
-          waterMl: base.waterMl,
+          kcal: Math.round(withWater.kcal * 1.15),
+          protein: withWater.protein,
+          carbs: Math.round(withWater.carbs * 1.15),
+          fat: Math.round(withWater.fat * 1.15),
+          waterMl: withWater.waterMl,
         };
       },
       totals: () => sumMacros(get().todayEntries()),
@@ -476,6 +606,13 @@ export const useFarfurieStore = create<State>()(
         delete data.streak;
         delete data.waterMl;
         if (!Array.isArray(data.potMembers)) data.potMembers = defaultPotMembers();
+        if (data.subscriptionTier !== "premium") data.subscriptionTier = "free";
+        if (!Array.isArray(data.customFoods)) data.customFoods = [];
+        if (!Array.isArray(data.weightLogs)) data.weightLogs = [];
+        if (!Array.isArray(data.bodyFatLogs)) data.bodyFatLogs = [];
+        if (!Array.isArray(data.measurements)) data.measurements = [];
+        if (!Array.isArray(data.progressPhotos)) data.progressPhotos = [];
+        if (!data.reminders) data.reminders = { meals: false, water: false, weigh: false };
         if (Array.isArray(data.shopping)) {
           data.shopping = (data.shopping as ShoppingItem[]).filter(
             (i) => !String(i.id).startsWith("seed-"),

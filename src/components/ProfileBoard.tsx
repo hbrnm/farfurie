@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Timer, X } from "lucide-react";
-import { fastingProtocols, exercises } from "@/lib/activity";
+import { X } from "lucide-react";
+import { exercises } from "@/lib/activity";
 import {
   calcBmr,
   calcCalorieGoal,
@@ -14,15 +14,10 @@ import {
   type Sex,
 } from "@/lib/goals";
 import { t } from "@/lib/i18n";
-import { useBurnedToday, useFastingStatus, useTodayKey } from "@/lib/selectors";
+import { useBurnedToday, useTodayKey } from "@/lib/selectors";
 import { onDate } from "@/lib/diary";
 import { useFarfurieStore } from "@/lib/store";
-
-function formatMins(mins: number) {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `${h}h ${String(m).padStart(2, "0")}m`;
-}
+import { PremiumGate } from "@/components/PremiumGate";
 
 export function ProfileBoard() {
   const locale = useFarfurieStore((s) => s.locale);
@@ -30,10 +25,6 @@ export function ProfileBoard() {
   const goals = useFarfurieStore((s) => s.goals);
   const setProfile = useFarfurieStore((s) => s.setProfile);
   const applyProfileGoals = useFarfurieStore((s) => s.applyProfileGoals);
-  const fastingProtocolId = useFarfurieStore((s) => s.fastingProtocolId);
-  const setFastingProtocol = useFarfurieStore((s) => s.setFastingProtocol);
-  const startFasting = useFarfurieStore((s) => s.startFasting);
-  const stopFasting = useFarfurieStore((s) => s.stopFasting);
   const logExercise = useFarfurieStore((s) => s.logExercise);
   const removeExercise = useFarfurieStore((s) => s.removeExercise);
   const resetToday = useFarfurieStore((s) => s.resetToday);
@@ -44,6 +35,9 @@ export function ProfileBoard() {
   const today = useTodayKey();
   const todayLogs = onDate(exerciseLogs, today);
   const favoriteRecipeIds = useFarfurieStore((s) => s.favoriteRecipeIds);
+  const tier = useFarfurieStore((s) => s.subscriptionTier);
+  const setSubscriptionTier = useFarfurieStore((s) => s.setSubscriptionTier);
+  const setCustomMacros = useFarfurieStore((s) => s.setCustomMacros);
 
   const [draft, setDraft] = useState<ProfileInput>(profile);
   const [exId, setExId] = useState(exercises[0].id);
@@ -61,8 +55,6 @@ export function ProfileBoard() {
       kcal,
     };
   }, [draft]);
-
-  const status = useFastingStatus();
 
   const patch = <K extends keyof ProfileInput>(key: K, value: ProfileInput[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
@@ -160,44 +152,44 @@ export function ProfileBoard() {
       </section>
 
       <section className="surface p-5">
-        <div className="mb-3 flex items-center gap-2 text-brand">
-          <Timer size={18} />
-          <h2 className="display text-2xl">{t(locale, "fasting")}</h2>
-        </div>
-        <p className="mb-4 text-sm text-ink-soft">{t(locale, "fastingDesc")}</p>
-        <div className="mb-4 flex flex-wrap gap-2">
-          {fastingProtocols.map((p) => (
-            <Chip
-              key={p.id}
-              active={fastingProtocolId === p.id}
-              onClick={() => setFastingProtocol(p.id)}
-              label={p.label}
-            />
-          ))}
-        </div>
-        <div className="rounded-2xl bg-white/70 p-4">
-          <p className="text-sm font-semibold text-ink-soft">
-            {status.phase === "idle"
-              ? status.protocol.label
-              : status.phase === "fasting"
-                ? t(locale, "fastingNow")
-                : t(locale, "eatingNow")}
-          </p>
-          <p className="display mt-1 text-3xl text-brand">
-            {status.active ? formatMins(status.remainingMin) : formatMins(status.protocol.fastHours * 60)}
-          </p>
-          <div className="mt-4 flex gap-2">
-            {!status.active ? (
-              <button type="button" className="btn btn-primary" onClick={startFasting}>
-                {t(locale, "startFast")}
-              </button>
-            ) : (
-              <button type="button" className="btn btn-ghost" onClick={stopFasting}>
-                {t(locale, "stopFast")}
-              </button>
-            )}
-          </div>
-        </div>
+        <h2 className="display text-2xl">{t(locale, "managePlan")}</h2>
+        <p className="mt-1 text-sm font-semibold text-brand">
+          {tier === "premium" ? t(locale, "premium") : t(locale, "free")}
+        </p>
+        {tier === "premium" ? (
+          <button
+            type="button"
+            className="btn btn-ghost mt-4 text-sm"
+            onClick={() => setSubscriptionTier("free")}
+          >
+            {t(locale, "downgrade")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary mt-4"
+            onClick={() => setSubscriptionTier("premium")}
+          >
+            {t(locale, "upgrade")}
+          </button>
+        )}
+        <PremiumGate feature="customMacros">
+          <button
+            type="button"
+            className="btn btn-ghost mt-3 w-full text-sm"
+            onClick={() =>
+              setCustomMacros({
+                kcal: preview.kcal,
+                protein: Math.round(profile.weightKg * 2),
+                carbs: 180,
+                fat: 55,
+                waterMl: 2500,
+              })
+            }
+          >
+            {t(locale, "customTargets")}
+          </button>
+        </PremiumGate>
       </section>
 
       <section className="surface p-5">
@@ -265,12 +257,21 @@ export function ProfileBoard() {
           <p className="display text-xl">{t(locale, "navPot")}</p>
           <p className="mt-1 text-sm text-ink-soft">{t(locale, "openPot")}</p>
         </Link>
-        <Link
-          href="/app/insights"
-          className="surface block p-5 transition hover:-translate-y-0.5"
-        >
+        <Link href="/app/progress" className="surface block p-5 transition hover:-translate-y-0.5">
           <p className="display text-xl">{t(locale, "navInsights")}</p>
           <p className="mt-1 text-sm text-ink-soft">{t(locale, "openInsights")}</p>
+        </Link>
+        <Link href="/app/teams" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "teams")}</p>
+        </Link>
+        <Link href="/app/compare" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "compare")}</p>
+        </Link>
+        <Link href="/app/recipes" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navRecipes")}</p>
+        </Link>
+        <Link href="/app/list" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navList")}</p>
         </Link>
         <Link
           href="/app/market"
@@ -306,6 +307,31 @@ export function ProfileBoard() {
           >
             {t(locale, "exportData")}
           </button>
+          <PremiumGate
+            feature="historyExport"
+            fallback={<span className="btn btn-ghost text-sm">{t(locale, "exportCsv")}</span>}
+          >
+            <button
+              type="button"
+              className="btn btn-ghost text-sm"
+              onClick={() => {
+                const rows = useFarfurieStore.getState().entries.map(
+                  (e) =>
+                    `${e.dateKey},${e.meal},${e.nameRo},${e.macros.kcal},${e.macros.protein},${e.macros.carbs},${e.macros.fat}`,
+                );
+                const csv = ["date,meal,name,kcal,protein,carbs,fat", ...rows].join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `farfurie-${today}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              {t(locale, "exportCsv")}
+            </button>
+          </PremiumGate>
           <button type="button" className="btn btn-ghost text-sm" onClick={resetToday}>
             {t(locale, "resetToday")}
           </button>
