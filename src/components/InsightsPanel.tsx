@@ -50,8 +50,12 @@ export function InsightsPanel() {
   });
 
   const weekDates = weekISODates(today);
-  const weekdayVals = weekDates.filter((d) => !isWeekendISO(d)).map((d) => kcalByDate.get(d) ?? 0);
-  const weekendVals = weekDates.filter((d) => isWeekendISO(d)).map((d) => kcalByDate.get(d) ?? 0);
+  const weekdayVals = weekDates
+    .filter((d) => !isWeekendISO(d) && d <= today)
+    .map((d) => kcalByDate.get(d) ?? 0);
+  const weekendVals = weekDates
+    .filter((d) => isWeekendISO(d) && d <= today)
+    .map((d) => kcalByDate.get(d) ?? 0);
   const avg = (xs: number[]) =>
     xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0;
 
