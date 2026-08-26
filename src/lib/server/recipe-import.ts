@@ -1,4 +1,4 @@
-import { macrosForGrams, searchFoods } from "@/lib/foods";
+import { foldRo, macrosForGrams, searchFoods } from "@/lib/foods";
 import { searchOffProducts } from "@/lib/server/off";
 import type { Recipe } from "@/lib/recipes";
 import {
@@ -110,6 +110,23 @@ const FETCH_HEADERS = {
   Accept: "text/html,application/json",
 };
 
+function dishMacrosFromName(name: string) {
+  const tokens = name.split(/[\s,/]+/).filter((w) => foldRo(w).length >= 4);
+  for (const token of tokens) {
+    const food = searchFoods(token, "ro")[0];
+    if (!food) continue;
+    const q = foldRo(token);
+    if (
+      foldRo(food.nameRo).includes(q) ||
+      foldRo(food.nameEn).includes(q) ||
+      foldRo(food.id).includes(q)
+    ) {
+      return macrosForGrams(food, food.defaultGrams);
+    }
+  }
+  return null;
+}
+
 async function nutritionFromIngredients(ingredients: string[], servings: number) {
   let kcal = 0;
   let protein = 0;
@@ -138,6 +155,7 @@ async function nutritionFromIngredients(ingredients: string[], servings: number)
       protein: Math.round(protein / div),
       carbs: Math.round(carbs / div),
       fat: Math.round((fat / div) * 10) / 10,
+      hits,
     };
   }
 
@@ -151,6 +169,7 @@ async function nutritionFromIngredients(ingredients: string[], servings: number)
       protein: Math.round(guessed.reduce((a, f) => a + f.per100g.protein, 0) / guessed.length),
       carbs: Math.round(guessed.reduce((a, f) => a + f.per100g.carbs, 0) / guessed.length),
       fat: Math.round((guessed.reduce((a, f) => a + f.per100g.fat, 0) / guessed.length) * 10) / 10,
+      hits: guessed.length,
     };
   }
 
@@ -164,25 +183,28 @@ async function nutritionFromIngredients(ingredients: string[], servings: number)
         protein: off[0].per100g.protein,
         carbs: off[0].per100g.carbs,
         fat: off[0].per100g.fat,
+        hits: 1,
       };
     }
   }
 
-  return { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+  return { kcal: 0, protein: 0, carbs: 0, fat: 0, hits: 0 };
 }
 
 async function finishImport(parsed: ParsedRecipeText & { source: string }): Promise<ImportedRecipe> {
   if (parsed.ingredients.length < 1) throw new Error("empty_recipe");
   const n = await nutritionFromIngredients(parsed.ingredients, parsed.servings);
-  if (!n.kcal || n.kcal < 40) throw new Error("no_nutrition");
+  const dish = dishMacrosFromName(parsed.name);
+  const macros = n.hits < 3 && dish ? { ...dish, hits: n.hits } : n;
+  if (!macros.kcal || macros.kcal < 40) throw new Error("no_nutrition");
   return {
     name: parsed.name,
     servings: parsed.servings,
     minutes: parsed.minutes,
-    kcal: n.kcal,
-    protein: n.protein,
-    carbs: n.carbs,
-    fat: n.fat,
+    kcal: Math.round(macros.kcal),
+    protein: Math.round(macros.protein),
+    carbs: Math.round(macros.carbs),
+    fat: Math.round(macros.fat * 10) / 10,
     ingredients: parsed.ingredients,
     steps: parsed.steps,
     source: parsed.source,
