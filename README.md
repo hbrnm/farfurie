@@ -2,11 +2,15 @@
 
 Romania-first calorie & recipe tracker (RO/EN), usable internationally.
 
+## Deploy
+
+See [DEPLOY.md](./DEPLOY.md) for GitHub + Vercel (browser steps, no agent tokens required).
+
 ## Run
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).

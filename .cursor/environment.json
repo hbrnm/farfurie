@@ -1,0 +1,4 @@
+{
+  "install": "cd farfurie && pnpm install",
+  "start": "cd farfurie && pnpm build && pnpm start -- -p 3000"
+}
