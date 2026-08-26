@@ -1,4 +1,4 @@
 {
   "install": "pnpm install",
-  "start": "pnpm build && pnpm start"
+  "start": "pnpm dev"
 }
