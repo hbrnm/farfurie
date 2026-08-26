@@ -31,3 +31,6 @@ See [PRODUCT.md](./PRODUCT.md) for competitive analysis and differentiators.
 8. **Listă de cumpărături** — from recipes
 9. **Post intermitent** — 16:8 and more
 10. **Mișcare** — exercise log with calories burned
+11. **PWA** — installable on phone (Add to Home Screen)
+12. **Onboarding** — first-run goals wizard
+13. **Plan săptămânal** — recipes by day → diary + shopping list
