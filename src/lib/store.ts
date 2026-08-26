@@ -11,12 +11,25 @@ import {
   calcCalorieGoal,
   calcMacroGoals,
   calcTdee,
+  clampProfile,
   defaultProfile,
   type ProfileInput,
 } from "./goals";
 import { exercises, type FastingProtocol, fastingProtocols } from "./activity";
+import { localDateKey } from "./dates";
+import {
+  dateKeyOf,
+  onDate,
+  pickGapMeal,
+  recipeAlreadyOnMeal,
+  remainingMacros,
+  shoppingHasIngredient,
+  sumMacros,
+  type MealKey,
+} from "./diary";
+import { defaultPotMembers, type PotMember } from "./pot";
 
-export type MealKey = "breakfast" | "lunch" | "dinner" | "snack";
+export type { MealKey, PotMember };
 
 export type DiaryEntry = {
   id: string;
@@ -25,6 +38,10 @@ export type DiaryEntry = {
   nameEn: string;
   macros: Macros;
   createdAt: string;
+  dateKey: string;
+  recipeId?: string;
+  foodId?: string;
+  grams?: number;
 };
 
 export type ShoppingItem = {
@@ -43,6 +60,7 @@ export type ExerciseLog = {
   minutes: number;
   kcal: number;
   createdAt: string;
+  dateKey: string;
 };
 
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -64,8 +82,7 @@ type Goals = Macros & { waterMl: number };
 type State = {
   locale: Locale;
   holidayMode: boolean;
-  waterMl: number;
-  streak: number;
+  waterByDate: Record<string, number>;
   entries: DiaryEntry[];
   profile: ProfileInput;
   goals: Goals;
@@ -77,10 +94,13 @@ type State = {
   exerciseLogs: ExerciseLog[];
   onboardingDone: boolean;
   weekPlan: WeekPlan;
+  potMembers: PotMember[];
   setLocale: (locale: Locale) => void;
   toggleHoliday: () => void;
   addWater: () => void;
-  addEntry: (entry: Omit<DiaryEntry, "id" | "createdAt">) => void;
+  addEntry: (
+    entry: Omit<DiaryEntry, "id" | "createdAt" | "dateKey"> & { dateKey?: string },
+  ) => void;
   addFoodToMeal: (foodId: string, meal: MealKey, grams?: number) => void;
   addRecipeToMeal: (recipeId: string, meal: MealKey) => void;
   removeEntry: (id: string) => void;
@@ -88,11 +108,11 @@ type State = {
   applyProfileGoals: () => void;
   completeOnboarding: () => void;
   setPlanSlot: (day: DayKey, meal: MealKey, recipeId: string | null) => void;
-  applyTodayPlanToDiary: () => void;
+  applyTodayPlanToDiary: () => number;
   addWeekPlanToShopping: () => void;
   toggleFavoriteRecipe: (id: string) => void;
   toggleFavoriteFood: (id: string) => void;
-  addRecipeToShopping: (recipeId: string) => void;
+  addRecipeToShopping: (recipeId: string) => number;
   toggleShoppingItem: (id: string) => void;
   clearCheckedShopping: () => void;
   clearShopping: () => void;
@@ -101,6 +121,13 @@ type State = {
   stopFasting: () => void;
   logExercise: (exerciseId: string, minutes: number) => void;
   removeExercise: (id: string) => void;
+  setPotMembers: (members: PotMember[]) => void;
+  resetToday: () => void;
+  resetAllLogs: () => void;
+  exportPayload: () => Record<string, unknown>;
+  todayEntries: () => DiaryEntry[];
+  todayWater: () => number;
+  gapMeal: () => MealKey;
   baseGoals: () => Goals;
   effectiveGoals: () => Goals;
   totals: () => Macros;
@@ -116,8 +143,9 @@ type State = {
 };
 
 function goalsFromProfile(profile: ProfileInput): Goals {
-  const kcal = calcCalorieGoal(profile);
-  return calcMacroGoals(kcal, profile.weightKg);
+  const clamped = clampProfile(profile);
+  const kcal = calcCalorieGoal(clamped);
+  return calcMacroGoals(kcal, clamped.weightKg);
 }
 
 const INITIAL_GOALS = goalsFromProfile(defaultProfile);
@@ -139,70 +167,56 @@ function todayDayKey(): DayKey {
   return map[new Date().getDay()];
 }
 
+function newId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export const useFarfurieStore = create<State>()(
   persist(
     (set, get) => ({
       locale: "ro",
       holidayMode: false,
-      waterMl: 750,
-      streak: 4,
+      waterByDate: {},
       onboardingDone: false,
       weekPlan: emptyWeekPlan(),
       profile: defaultProfile,
       goals: INITIAL_GOALS,
-      favoriteRecipeIds: ["ovaz-napolact", "salata-ton"],
-      favoriteFoodIds: ["ton-scandia", "iaurt-napolact"],
-      shopping: [
-        {
-          id: "seed-shop-1",
-          nameRo: "150g iaurt Napolact",
-          nameEn: "150g Napolact yogurt",
-          checked: false,
-          fromRecipeId: "ovaz-napolact",
-        },
-        {
-          id: "seed-shop-2",
-          nameRo: "1 măr",
-          nameEn: "1 apple",
-          checked: true,
-          fromRecipeId: "ovaz-napolact",
-        },
-      ],
+      favoriteRecipeIds: [],
+      favoriteFoodIds: [],
+      shopping: [],
       fastingProtocolId: "16-8",
       fastingStartedAt: null,
       exerciseLogs: [],
-      entries: [
-        {
-          id: "seed-1",
-          meal: "breakfast",
-          nameRo: "Ovăz cu iaurt Napolact și mere",
-          nameEn: "Oats with Napolact yogurt and apple",
-          macros: { kcal: 340, protein: 14, carbs: 52, fat: 9 },
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "seed-2",
-          meal: "lunch",
-          nameRo: "Piept de pui la grătar",
-          nameEn: "Grilled chicken breast",
-          macros: { kcal: 248, protein: 46.5, carbs: 0, fat: 5.4 },
-          createdAt: new Date().toISOString(),
-        },
-      ],
+      entries: [],
+      potMembers: defaultPotMembers(),
       setLocale: (locale) => set({ locale }),
       toggleHoliday: () => set((s) => ({ holidayMode: !s.holidayMode })),
-      addWater: () => set((s) => ({ waterMl: Math.min(s.waterMl + 250, 5000) })),
-      addEntry: (entry) =>
-        set((s) => ({
-          entries: [
-            ...s.entries,
-            {
-              ...entry,
-              id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-              createdAt: new Date().toISOString(),
+      addWater: () =>
+        set((s) => {
+          const day = localDateKey();
+          const current = s.waterByDate[day] ?? 0;
+          return {
+            waterByDate: {
+              ...s.waterByDate,
+              [day]: Math.min(current + 250, 5000),
             },
-          ],
-        })),
+          };
+        }),
+      addEntry: (entry) =>
+        set((s) => {
+          const createdAt = new Date().toISOString();
+          return {
+            entries: [
+              ...s.entries,
+              {
+                ...entry,
+                id: newId(),
+                createdAt,
+                dateKey: entry.dateKey ?? localDateKey(),
+              },
+            ],
+          };
+        }),
       addFoodToMeal: (foodId, meal, grams) => {
         const food = foods.find((f) => f.id === foodId);
         if (!food) return;
@@ -213,6 +227,8 @@ export const useFarfurieStore = create<State>()(
           nameRo: food.nameRo,
           nameEn: food.nameEn,
           macros,
+          foodId,
+          grams: g,
         });
       },
       addRecipeToMeal: (recipeId, meal) => {
@@ -223,18 +239,29 @@ export const useFarfurieStore = create<State>()(
           nameRo: recipe.nameRo,
           nameEn: recipe.nameEn,
           macros: recipe.perServing,
+          recipeId,
         });
       },
       removeEntry: (id) =>
         set((s) => ({ entries: s.entries.filter((e) => e.id !== id) })),
-      setProfile: (profile) => set({ profile }),
+      setProfile: (profile) => set({ profile: clampProfile(profile) }),
       applyProfileGoals: () => {
-        const goals = goalsFromProfile(get().profile);
-        set({ goals });
+        const profile = clampProfile(get().profile);
+        const goals = goalsFromProfile(profile);
+        set({ profile, goals });
       },
       completeOnboarding: () => {
-        const goals = goalsFromProfile(get().profile);
-        set({ goals, onboardingDone: true });
+        const profile = clampProfile(get().profile);
+        const goals = goalsFromProfile(profile);
+        set({
+          profile,
+          goals,
+          onboardingDone: true,
+          entries: [],
+          waterByDate: {},
+          exerciseLogs: [],
+          shopping: [],
+        });
       },
       setPlanSlot: (day, meal, recipeId) =>
         set((s) => {
@@ -246,9 +273,15 @@ export const useFarfurieStore = create<State>()(
       applyTodayPlanToDiary: () => {
         const day = todayDayKey();
         const slots = get().weekPlan[day] ?? {};
+        const today = onDate(get().entries, localDateKey());
+        let added = 0;
         (Object.entries(slots) as [MealKey, string][]).forEach(([meal, recipeId]) => {
-          if (recipeId) get().addRecipeToMeal(recipeId, meal);
+          if (!recipeId) return;
+          if (recipeAlreadyOnMeal(today, meal, recipeId)) return;
+          get().addRecipeToMeal(recipeId, meal);
+          added += 1;
         });
+        return added;
       },
       addWeekPlanToShopping: () => {
         const ids = new Set<string>();
@@ -273,15 +306,23 @@ export const useFarfurieStore = create<State>()(
         })),
       addRecipeToShopping: (recipeId) => {
         const recipe = recipes.find((r) => r.id === recipeId);
-        if (!recipe) return;
-        const items: ShoppingItem[] = recipe.ingredientsRo.map((nameRo, i) => ({
-          id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 5)}`,
-          nameRo,
-          nameEn: recipe.ingredientsEn[i] ?? nameRo,
-          checked: false,
-          fromRecipeId: recipeId,
-        }));
+        if (!recipe) return 0;
+        const existing = get().shopping;
+        const items: ShoppingItem[] = recipe.ingredientsRo.flatMap((nameRo, i) => {
+          if (shoppingHasIngredient(existing, recipeId, nameRo)) return [];
+          return [
+            {
+              id: `${newId()}-${i}`,
+              nameRo,
+              nameEn: recipe.ingredientsEn[i] ?? nameRo,
+              checked: false,
+              fromRecipeId: recipeId,
+            },
+          ];
+        });
+        if (items.length === 0) return 0;
         set((s) => ({ shopping: [...s.shopping, ...items] }));
+        return items.length;
       },
       toggleShoppingItem: (id) =>
         set((s) => ({
@@ -299,17 +340,19 @@ export const useFarfurieStore = create<State>()(
         const ex = exercises.find((e) => e.id === exerciseId);
         if (!ex || minutes <= 0) return;
         const kcal = Math.round(ex.kcalPerMin * minutes);
+        const createdAt = new Date().toISOString();
         set((s) => ({
           exerciseLogs: [
             ...s.exerciseLogs,
             {
-              id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              id: newId(),
               exerciseId,
               nameRo: ex.nameRo,
               nameEn: ex.nameEn,
               minutes,
               kcal,
-              createdAt: new Date().toISOString(),
+              createdAt,
+              dateKey: localDateKey(),
             },
           ],
         }));
@@ -318,6 +361,43 @@ export const useFarfurieStore = create<State>()(
         set((s) => ({
           exerciseLogs: s.exerciseLogs.filter((e) => e.id !== id),
         })),
+      setPotMembers: (members) => set({ potMembers: members }),
+      resetToday: () =>
+        set((s) => {
+          const day = localDateKey();
+          const waterByDate = { ...s.waterByDate };
+          delete waterByDate[day];
+          return {
+            entries: s.entries.filter((e) => dateKeyOf(e) !== day),
+            exerciseLogs: s.exerciseLogs.filter((e) => dateKeyOf(e) !== day),
+            waterByDate,
+          };
+        }),
+      resetAllLogs: () =>
+        set({
+          entries: [],
+          exerciseLogs: [],
+          waterByDate: {},
+          shopping: [],
+        }),
+      exportPayload: () => {
+        const s = get();
+        return {
+          exportedAt: new Date().toISOString(),
+          locale: s.locale,
+          profile: s.profile,
+          goals: s.goals,
+          entries: s.entries,
+          waterByDate: s.waterByDate,
+          exerciseLogs: s.exerciseLogs,
+          shopping: s.shopping,
+          weekPlan: s.weekPlan,
+          holidayMode: s.holidayMode,
+        };
+      },
+      todayEntries: () => onDate(get().entries, localDateKey()),
+      todayWater: () => get().waterByDate[localDateKey()] ?? 0,
+      gapMeal: () => pickGapMeal(get().todayEntries()),
       baseGoals: () => get().goals,
       effectiveGoals: () => {
         const base = get().goals;
@@ -330,32 +410,10 @@ export const useFarfurieStore = create<State>()(
           waterMl: base.waterMl,
         };
       },
-      totals: () => {
-        return get().entries.reduce(
-          (acc, e) => ({
-            kcal: acc.kcal + e.macros.kcal,
-            protein: Math.round((acc.protein + e.macros.protein) * 10) / 10,
-            carbs: Math.round((acc.carbs + e.macros.carbs) * 10) / 10,
-            fat: Math.round((acc.fat + e.macros.fat) * 10) / 10,
-          }),
-          { kcal: 0, protein: 0, carbs: 0, fat: 0 },
-        );
-      },
-      remaining: () => {
-        const goals = get().effectiveGoals();
-        const totals = get().totals();
-        const burned = get().burnedToday();
-        // Net-style remaining: burned adds back to budget (optional MFP-like)
-        const budget = goals.kcal + burned;
-        return {
-          kcal: budget - totals.kcal,
-          protein: Math.round((goals.protein - totals.protein) * 10) / 10,
-          carbs: Math.round((goals.carbs - totals.carbs) * 10) / 10,
-          fat: Math.round((goals.fat - totals.fat) * 10) / 10,
-        };
-      },
+      totals: () => sumMacros(get().todayEntries()),
+      remaining: () => remainingMacros(get().effectiveGoals(), get().totals()),
       burnedToday: () =>
-        get().exerciseLogs.reduce((a, e) => a + e.kcal, 0),
+        onDate(get().exerciseLogs, localDateKey()).reduce((a, e) => a + e.kcal, 0),
       fastingStatus: () => {
         const protocol =
           fastingProtocols.find((p) => p.id === get().fastingProtocolId) ??
@@ -394,7 +452,38 @@ export const useFarfurieStore = create<State>()(
         };
       },
     }),
-    { name: "farfurie-demo-v3" },
+    {
+      name: "farfurie-v4",
+      version: 1,
+      migrate: (persisted) => {
+        const data = persisted as Record<string, unknown>;
+        const entries = Array.isArray(data.entries) ? data.entries : [];
+        data.entries = (entries as DiaryEntry[])
+          .filter((e) => !String(e.id).startsWith("seed-"))
+          .map((e) => ({
+            ...e,
+            dateKey: e.dateKey ?? dateKeyOf(e),
+          }));
+        const logs = Array.isArray(data.exerciseLogs) ? data.exerciseLogs : [];
+        data.exerciseLogs = (logs as ExerciseLog[]).map((e) => ({
+          ...e,
+          dateKey: e.dateKey ?? dateKeyOf(e),
+        }));
+        if (!data.waterByDate || typeof data.waterByDate !== "object") {
+          const old = typeof data.waterMl === "number" ? data.waterMl : 0;
+          data.waterByDate = old > 0 ? { [localDateKey()]: old } : {};
+        }
+        delete data.streak;
+        delete data.waterMl;
+        if (!Array.isArray(data.potMembers)) data.potMembers = defaultPotMembers();
+        if (Array.isArray(data.shopping)) {
+          data.shopping = (data.shopping as ShoppingItem[]).filter(
+            (i) => !String(i.id).startsWith("seed-"),
+          );
+        }
+        return data as unknown as State;
+      },
+    },
   ),
 );
 

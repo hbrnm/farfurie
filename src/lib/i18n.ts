@@ -106,7 +106,8 @@ export const translations = {
     fastingNow: "În post",
     eatingNow: "Fereastră de mâncat",
     exercise: "Mișcare",
-    exerciseDesc: "Loghează activitatea — caloriile arse se văd în progres.",
+    exerciseDesc:
+      "Loghează activitatea — evidență separată, fără să umfle bugetul (TDEE include deja activitatea).",
     minutes: "minute",
     logExercise: "Loghează",
     burned: "Arse azi",
@@ -146,6 +147,23 @@ export const translations = {
     onboardSkip: "Sari peste",
     installHint: "Pe telefon: Adaugă pe ecranul principal pentru app-like.",
     openMarket: "Calendarul pieței",
+    grams: "grame",
+    addMember: "Adaugă membru",
+    removeMember: "Șterge",
+    splitByGoals: "Porțiile urmează obiectivul caloric al fiecăruia.",
+    disclaimer:
+      "Farfurie e un jurnal, nu sfat medical. Caloriile și macros sunt estimări. Datele stau pe acest dispozitiv.",
+    exportData: "Exportă JSON",
+    resetToday: "Resetează azi",
+    resetAll: "Șterge jurnalul",
+    planApplied: "Planul de azi e deja în jurnal.",
+    planAdded: "Rețete adăugate în jurnal.",
+    listUpdated: "Lista e actualizată, fără duplicate.",
+    exerciseNote:
+      "TDEE include deja activitatea din profil. Mișcarea logată e evidență separată, nu calorii extra în buget.",
+    mealsToday: "Mese logate azi",
+    weekCalories: "Calorii — ultimele 7 zile",
+    romania: "România",
   },
   en: {
     brand: "Farfurie",
@@ -252,7 +270,8 @@ export const translations = {
     fastingNow: "Fasting",
     eatingNow: "Eating window",
     exercise: "Movement",
-    exerciseDesc: "Log activity — burned calories show in progress.",
+    exerciseDesc:
+      "Log activity — a separate record. TDEE already includes your activity level.",
     minutes: "minutes",
     logExercise: "Log",
     burned: "Burned today",
@@ -292,6 +311,23 @@ export const translations = {
     onboardSkip: "Skip",
     installHint: "On phone: Add to Home Screen for an app-like feel.",
     openMarket: "Market calendar",
+    grams: "grams",
+    addMember: "Add member",
+    removeMember: "Remove",
+    splitByGoals: "Servings follow each person’s calorie goal.",
+    disclaimer:
+      "Farfurie is a diary, not medical advice. Calories and macros are estimates. Data stays on this device.",
+    exportData: "Export JSON",
+    resetToday: "Reset today",
+    resetAll: "Clear diary",
+    planApplied: "Today’s plan is already in the diary.",
+    planAdded: "Recipes added to the diary.",
+    listUpdated: "List updated, without duplicates.",
+    exerciseNote:
+      "TDEE already includes your activity level. Logged movement is a separate record, not extra budget calories.",
+    mealsToday: "Meals logged today",
+    weekCalories: "Calories — last 7 days",
+    romania: "Romania",
   },
 } as const;
 

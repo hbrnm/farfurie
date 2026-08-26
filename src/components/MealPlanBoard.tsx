@@ -32,6 +32,7 @@ export function MealPlanBoard() {
   const [picking, setPicking] = useState<{ day: DayKey; meal: MealKey } | null>(
     null,
   );
+  const [notice, setNotice] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -46,13 +47,28 @@ export function MealPlanBoard() {
       </header>
 
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn btn-primary text-sm" onClick={applyTodayPlanToDiary}>
+        <button
+          type="button"
+          className="btn btn-primary text-sm"
+          onClick={() => {
+            const added = applyTodayPlanToDiary();
+            setNotice(added > 0 ? t(locale, "planAdded") : t(locale, "planApplied"));
+          }}
+        >
           {t(locale, "applyToday")}
         </button>
-        <button type="button" className="btn btn-ghost text-sm" onClick={addWeekPlanToShopping}>
+        <button
+          type="button"
+          className="btn btn-ghost text-sm"
+          onClick={() => {
+            addWeekPlanToShopping();
+            setNotice(t(locale, "listUpdated"));
+          }}
+        >
           {t(locale, "planToList")}
         </button>
       </div>
+      {notice && <p className="text-sm font-semibold text-brand">{notice}</p>}
 
       <div className="space-y-4">
         {WEEK_DAYS.map((day) => (

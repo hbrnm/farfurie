@@ -2,16 +2,16 @@
 
 import { Droplets, Flame } from "lucide-react";
 import { t } from "@/lib/i18n";
-import { useEffectiveGoals } from "@/lib/selectors";
+import { useEffectiveGoals, useStreak, useTodayWater } from "@/lib/selectors";
 import { useFarfurieStore } from "@/lib/store";
 
 export function SideStats() {
   const locale = useFarfurieStore((s) => s.locale);
-  const waterMl = useFarfurieStore((s) => s.waterMl);
-  const streak = useFarfurieStore((s) => s.streak);
+  const waterMl = useTodayWater();
+  const streak = useStreak();
   const addWater = useFarfurieStore((s) => s.addWater);
   const goals = useEffectiveGoals();
-  const waterPct = Math.min(100, Math.round((waterMl / goals.waterMl) * 100));
+  const waterPct = Math.min(100, Math.round((waterMl / Math.max(goals.waterMl, 1)) * 100));
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">

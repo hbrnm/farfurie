@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   calcBmr,
+  calcCalorieGoal,
   calcTdee,
   type ActivityLevel,
   type GoalType,
@@ -24,14 +25,7 @@ export function OnboardingWizard() {
   const [draft, setDraft] = useState<ProfileInput>(profile);
 
   const preview = useMemo(() => {
-    const tdee = calcTdee(draft);
-    const kcal =
-      draft.goal === "lose"
-        ? Math.max(1200, tdee - 400)
-        : draft.goal === "gain"
-          ? tdee + 300
-          : tdee;
-    return { bmr: calcBmr(draft), tdee, kcal };
+    return { bmr: calcBmr(draft), tdee: calcTdee(draft), kcal: calcCalorieGoal(draft) };
   }, [draft]);
 
   if (onboardingDone) return null;

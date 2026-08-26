@@ -1,7 +1,34 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useFarfurieStore, type MealKey } from "./store";
+import { lastNDateKeys, localDateKey } from "./dates";
+import {
+  calcStreak,
+  kcalOnDate,
+  loggedDateKeys,
+  onDate,
+  pickGapMeal,
+  remainingMacros,
+  sumMacros,
+  type MealKey,
+} from "./diary";
+import { useFarfurieStore } from "./store";
+
+export function useTodayKey() {
+  const [key, setKey] = useState(localDateKey);
+  useEffect(() => {
+    const tick = () => setKey(localDateKey());
+    const id = setInterval(tick, 30_000);
+    window.addEventListener("focus", tick);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", tick);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, []);
+  return key;
+}
 
 export function useEffectiveGoals() {
   const goals = useFarfurieStore((s) => s.goals);
@@ -18,44 +45,59 @@ export function useEffectiveGoals() {
   }, [goals, holidayMode]);
 }
 
-export function useTotals() {
+export function useTodayEntries() {
   const entries = useFarfurieStore((s) => s.entries);
-  return useMemo(
-    () =>
-      entries.reduce(
-        (acc, e) => ({
-          kcal: acc.kcal + e.macros.kcal,
-          protein: Math.round((acc.protein + e.macros.protein) * 10) / 10,
-          carbs: Math.round((acc.carbs + e.macros.carbs) * 10) / 10,
-          fat: Math.round((acc.fat + e.macros.fat) * 10) / 10,
-        }),
-        { kcal: 0, protein: 0, carbs: 0, fat: 0 },
-      ),
-    [entries],
-  );
+  const today = useTodayKey();
+  return useMemo(() => onDate(entries, today), [entries, today]);
+}
+
+export function useTotals() {
+  const entries = useTodayEntries();
+  return useMemo(() => sumMacros(entries), [entries]);
 }
 
 export function useBurnedToday() {
   const exerciseLogs = useFarfurieStore((s) => s.exerciseLogs);
+  const today = useTodayKey();
   return useMemo(
-    () => exerciseLogs.reduce((a, e) => a + e.kcal, 0),
-    [exerciseLogs],
+    () => onDate(exerciseLogs, today).reduce((a, e) => a + e.kcal, 0),
+    [exerciseLogs, today],
   );
+}
+
+export function useTodayWater() {
+  const waterByDate = useFarfurieStore((s) => s.waterByDate);
+  const today = useTodayKey();
+  return waterByDate[today] ?? 0;
 }
 
 export function useRemaining() {
   const goals = useEffectiveGoals();
   const totals = useTotals();
-  const burned = useBurnedToday();
-  return useMemo(() => {
-    const budget = goals.kcal + burned;
-    return {
-      kcal: budget - totals.kcal,
-      protein: Math.round((goals.protein - totals.protein) * 10) / 10,
-      carbs: Math.round((goals.carbs - totals.carbs) * 10) / 10,
-      fat: Math.round((goals.fat - totals.fat) * 10) / 10,
-    };
-  }, [goals, totals, burned]);
+  return useMemo(() => remainingMacros(goals, totals), [goals, totals]);
+}
+
+export function useStreak() {
+  const entries = useFarfurieStore((s) => s.entries);
+  const today = useTodayKey();
+  return useMemo(
+    () => calcStreak(loggedDateKeys(entries), today),
+    [entries, today],
+  );
+}
+
+export function useWeekKcal() {
+  const entries = useFarfurieStore((s) => s.entries);
+  const today = useTodayKey();
+  return useMemo(
+    () => lastNDateKeys(7, today).map((dateKey) => ({ dateKey, kcal: kcalOnDate(entries, dateKey) })),
+    [entries, today],
+  );
+}
+
+export function useGapMeal() {
+  const entries = useTodayEntries();
+  return useMemo(() => pickGapMeal(entries), [entries]);
 }
 
 export function useFastingStatus() {
@@ -67,12 +109,14 @@ export function useFastingStatus() {
     return () => clearInterval(id);
   }, []);
   return useMemo(() => {
+    void fastingProtocolId;
+    void fastingStartedAt;
     void now;
     return useFarfurieStore.getState().fastingStatus();
   }, [fastingProtocolId, fastingStartedAt, now]);
 }
 
 export function useMealEntries(meal: MealKey) {
-  const entries = useFarfurieStore((s) => s.entries);
+  const entries = useTodayEntries();
   return useMemo(() => entries.filter((e) => e.meal === meal), [entries, meal]);
 }

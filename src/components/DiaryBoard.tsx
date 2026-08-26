@@ -2,18 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { Plus, Sparkles, X } from "lucide-react";
-import { foodName, foodUnit, searchFoods } from "@/lib/foods";
+import { foodName, foodUnit, macrosForGrams, searchFoods } from "@/lib/foods";
 import { fillTheGap } from "@/lib/fillGap";
 import { t } from "@/lib/i18n";
-import { useRemaining } from "@/lib/selectors";
+import { useGapMeal, useRemaining, useTodayEntries } from "@/lib/selectors";
 import { type MealKey, useFarfurieStore } from "@/lib/store";
 
 const meals: MealKey[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export function DiaryBoard() {
   const locale = useFarfurieStore((s) => s.locale);
-  const entries = useFarfurieStore((s) => s.entries);
+  const entries = useTodayEntries();
   const remaining = useRemaining();
+  const gapMeal = useGapMeal();
   const addFoodToMeal = useFarfurieStore((s) => s.addFoodToMeal);
   const addRecipeToMeal = useFarfurieStore((s) => s.addRecipeToMeal);
   const addEntry = useFarfurieStore((s) => s.addEntry);
@@ -21,6 +22,7 @@ export function DiaryBoard() {
   const [openMeal, setOpenMeal] = useState<MealKey | null>(null);
   const [query, setQuery] = useState("");
   const [showGap, setShowGap] = useState(true);
+  const [gramsById, setGramsById] = useState<Record<string, number>>({});
 
   const results = useMemo(() => searchFoods(query, locale), [query, locale]);
   const gap = useMemo(() => fillTheGap(remaining), [remaining]);
@@ -36,6 +38,9 @@ export function DiaryBoard() {
                 {t(locale, "fillGap")}
               </p>
               <p className="mt-1 text-sm text-ink-soft">{t(locale, "fillGapDesc")}</p>
+              <p className="mt-1 text-xs font-semibold text-ink-soft">
+                → {t(locale, gapMeal)}
+              </p>
             </div>
             <button
               type="button"
@@ -54,12 +59,12 @@ export function DiaryBoard() {
                 className="rounded-2xl border border-[var(--line)] bg-white/70 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand/30"
                 onClick={() => {
                   if (s.kind === "food" && s.foodId) {
-                    addFoodToMeal(s.foodId, "dinner", s.grams);
+                    addFoodToMeal(s.foodId, gapMeal, s.grams);
                   } else if (s.recipeId) {
-                    addRecipeToMeal(s.recipeId, "dinner");
+                    addRecipeToMeal(s.recipeId, gapMeal);
                   } else {
                     addEntry({
-                      meal: "dinner",
+                      meal: gapMeal,
                       nameRo: s.nameRo,
                       nameEn: s.nameEn,
                       macros: s.macros,
@@ -99,6 +104,7 @@ export function DiaryBoard() {
                   onClick={() => {
                     setOpenMeal(meal);
                     setQuery("");
+                    setGramsById({});
                   }}
                 >
                   <Plus size={16} />
@@ -119,6 +125,11 @@ export function DiaryBoard() {
                       <div>
                         <p className="text-sm font-semibold">
                           {locale === "ro" ? e.nameRo : e.nameEn}
+                          {e.grams ? (
+                            <span className="ml-1 text-xs font-medium text-ink-soft">
+                              · {e.grams}g
+                            </span>
+                          ) : null}
                         </p>
                         <p className="text-xs text-ink-soft">
                           {e.macros.kcal} kcal · P {e.macros.protein}g · C{" "}
@@ -167,36 +178,52 @@ export function DiaryBoard() {
               {results.length === 0 && (
                 <li className="text-sm text-ink-soft">{t(locale, "noResults")}</li>
               )}
-              {results.map((food) => (
-                <li key={food.id}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/80 px-3 py-3 text-left hover:border-brand/40"
-                    onClick={() => {
-                      addFoodToMeal(food.id, openMeal);
-                      setOpenMeal(null);
-                    }}
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {foodName(food, locale)}
-                        {food.brand ? (
-                          <span className="ml-2 text-xs font-medium text-ink-soft">
-                            {food.brand}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="text-xs text-ink-soft">
-                        {foodUnit(food, locale)} · {food.defaultGrams}g
-                      </p>
+              {results.map((food) => {
+                const grams = gramsById[food.id] ?? food.defaultGrams;
+                const preview = macrosForGrams(food, grams);
+                return (
+                  <li key={food.id}>
+                    <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/80 px-3 py-3">
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left hover:text-brand"
+                        onClick={() => {
+                          addFoodToMeal(food.id, openMeal, grams);
+                          setOpenMeal(null);
+                        }}
+                      >
+                        <p className="text-sm font-semibold">
+                          {foodName(food, locale)}
+                          {food.brand ? (
+                            <span className="ml-2 text-xs font-medium text-ink-soft">
+                              {food.brand}
+                            </span>
+                          ) : null}
+                        </p>
+                        <p className="text-xs text-ink-soft">
+                          {foodUnit(food, locale)} · {preview.kcal} kcal
+                        </p>
+                      </button>
+                      <label className="shrink-0 text-right text-xs text-ink-soft">
+                        {t(locale, "grams")}
+                        <input
+                          type="number"
+                          min={10}
+                          max={800}
+                          value={grams}
+                          onChange={(e) =>
+                            setGramsById((prev) => ({
+                              ...prev,
+                              [food.id]: Number(e.target.value) || food.defaultGrams,
+                            }))
+                          }
+                          className="mt-1 w-20 rounded-xl border border-[var(--line)] bg-white px-2 py-1 text-sm font-semibold text-ink"
+                        />
+                      </label>
                     </div>
-                    <span className="text-sm font-semibold text-brand">
-                      {Math.round((food.per100g.kcal * food.defaultGrams) / 100)}{" "}
-                      kcal
-                    </span>
-                  </button>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

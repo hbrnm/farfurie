@@ -1,5 +1,7 @@
 # Audit Farfurie — 26 august 2026
 
+**Status:** P0 + P1 din acest raport sunt implementate pe ramura curentă (`farfurie-v4` persist, zile, streak real, grafic din istoric, seed gol, plan/listă fără duplicate, PWA network-first, oala după obiective, piață pe lună). Auditul de mai jos rămâne ca referință a problemelor găsite.
+
 **Obiect:** aplicația Farfurie (tracker de calorii și rețete, România-first, RO/EN)  
 **Scope:** produs vs. ce e livrat, corectitudine nutrițională, UX, date, securitate, tehnic  
 **Metodă:** revizuire completă a `src/` (~35 fișiere, ~3840 linii), calcule Mifflin–St Jeor reproduce pe cazuri, fără backend (nu există)

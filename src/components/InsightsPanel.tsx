@@ -1,22 +1,31 @@
 "use client";
 
 import { t } from "@/lib/i18n";
-import { useBurnedToday, useEffectiveGoals, useTotals } from "@/lib/selectors";
+import { weekdayShort } from "@/lib/dates";
+import {
+  useBurnedToday,
+  useEffectiveGoals,
+  useStreak,
+  useTodayEntries,
+  useTotals,
+  useWeekKcal,
+} from "@/lib/selectors";
 import { useFarfurieStore } from "@/lib/store";
 
 export function InsightsPanel() {
   const locale = useFarfurieStore((s) => s.locale);
   const totals = useTotals();
   const goals = useEffectiveGoals();
-  const streak = useFarfurieStore((s) => s.streak);
+  const streak = useStreak();
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
-  const entries = useFarfurieStore((s) => s.entries);
+  const entries = useTodayEntries();
   const profile = useFarfurieStore((s) => s.profile);
   const burned = useBurnedToday();
+  const week = useWeekKcal();
 
-  const proteinPct = Math.round((totals.protein / goals.protein) * 100);
-  const week = [1800, 2050, 1920, 2210, totals.kcal, 0, 0];
+  const proteinPct = Math.round((totals.protein / Math.max(goals.protein, 1)) * 100);
   const goalLabel = t(locale, profile.goal);
+  const maxKcal = Math.max(goals.kcal, ...week.map((d) => d.kcal), 1);
 
   return (
     <div className="space-y-6">
@@ -57,35 +66,29 @@ export function InsightsPanel() {
           </p>
         </article>
         <article className="surface p-5">
-          <p className="text-sm text-ink-soft">
-            {locale === "ro" ? "Mese logate azi" : "Meals logged today"}
-          </p>
+          <p className="text-sm text-ink-soft">{t(locale, "mealsToday")}</p>
           <p className="display mt-1 text-2xl">{entries.length}</p>
         </article>
       </div>
 
       <section className="surface p-5">
-        <h2 className="display mb-4 text-2xl">
-          {locale === "ro" ? "Calorii — săptămâna asta" : "Calories — this week"}
-        </h2>
+        <h2 className="display mb-4 text-2xl">{t(locale, "weekCalories")}</h2>
         <div className="flex h-40 items-end gap-2">
-          {week.map((v, i) => {
-            const h = v === 0 ? 8 : Math.max(12, Math.round((v / 2600) * 100));
-            const labels =
-              locale === "ro"
-                ? ["L", "Ma", "Mi", "J", "V", "S", "D"]
-                : ["M", "T", "W", "T", "F", "S", "S"];
+          {week.map((day) => {
+            const h = day.kcal === 0 ? 8 : Math.max(12, Math.round((day.kcal / maxKcal) * 100));
             return (
-              <div key={i} className="flex flex-1 flex-col items-center gap-2">
+              <div key={day.dateKey} className="flex flex-1 flex-col items-center gap-2">
                 <div
                   className="w-full rounded-t-xl bg-gradient-to-t from-brand to-accent transition-all"
                   style={{
                     height: `${h}%`,
-                    minHeight: v ? undefined : 8,
-                    opacity: v ? 1 : 0.25,
+                    minHeight: day.kcal ? undefined : 8,
+                    opacity: day.kcal ? 1 : 0.25,
                   }}
                 />
-                <span className="text-xs font-semibold text-ink-soft">{labels[i]}</span>
+                <span className="text-xs font-semibold text-ink-soft">
+                  {weekdayShort(day.dateKey, locale)}
+                </span>
               </div>
             );
           })}

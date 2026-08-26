@@ -17,7 +17,7 @@ export function MacroRing() {
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const burned = useBurnedToday();
 
-  const budget = goals.kcal + burned;
+  const budget = goals.kcal;
   const pct = Math.min(100, Math.round((totals.kcal / Math.max(budget, 1)) * 100));
   const radius = 54;
   const circ = 2 * Math.PI * radius;
@@ -79,7 +79,9 @@ export function MacroRing() {
             <div>
               <p className="text-sm text-ink-soft">
                 {t(locale, "eaten")} · {totals.kcal} / {budget} kcal
-                {burned > 0 ? ` (+${burned} ${t(locale, "burned").toLowerCase()})` : ""}
+                {burned > 0
+                  ? ` · ${burned} ${t(locale, "burned").toLowerCase()}`
+                  : ""}
               </p>
               {holidayMode && (
                 <p className="mt-1 text-xs font-semibold text-[var(--danger)]">

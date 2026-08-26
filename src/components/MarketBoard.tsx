@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { augustMarket } from "@/lib/market";
+import { MONTH_NAMES, marketForMonth } from "@/lib/market";
 import { recipes } from "@/lib/recipes";
 import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
@@ -14,6 +14,8 @@ const statusLabel = {
 
 export function MarketBoard() {
   const locale = useFarfurieStore((s) => s.locale);
+  const monthIndex = new Date().getMonth();
+  const items = marketForMonth(monthIndex);
 
   const ranked = foods
     .map((f) => ({ food: f, price: pricePer20gProtein(f) }))
@@ -27,12 +29,12 @@ export function MarketBoard() {
         <h1 className="display text-3xl md:text-4xl">{t(locale, "marketTitle")}</h1>
         <p className="mt-2 max-w-2xl text-ink-soft">{t(locale, "marketDesc")}</p>
         <p className="mt-2 text-sm font-semibold text-brand">
-          {locale === "ro" ? "August · România" : "August · Romania"}
+          {MONTH_NAMES[locale][monthIndex]} · {t(locale, "romania")}
         </p>
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {augustMarket.map((item, i) => (
+        {items.map((item, i) => (
           <article
             key={item.id}
             className="surface animate-rise p-4"

@@ -1,9 +1,10 @@
 "use client";
 
 import { Clock, Heart, ShoppingCart } from "lucide-react";
+import { useState } from "react";
 import { recipeName, recipes } from "@/lib/recipes";
 import { t } from "@/lib/i18n";
-import { useFarfurieStore } from "@/lib/store";
+import { type MealKey, useFarfurieStore } from "@/lib/store";
 
 export function RecipesGrid() {
   const locale = useFarfurieStore((s) => s.locale);
@@ -11,6 +12,7 @@ export function RecipesGrid() {
   const addRecipeToShopping = useFarfurieStore((s) => s.addRecipeToShopping);
   const favoriteRecipeIds = useFarfurieStore((s) => s.favoriteRecipeIds);
   const toggleFavoriteRecipe = useFarfurieStore((s) => s.toggleFavoriteRecipe);
+  const [meal, setMeal] = useState<MealKey>("lunch");
 
   const sorted = [...recipes].sort((a, b) => {
     const af = favoriteRecipeIds.includes(a.id) ? 0 : 1;
@@ -23,6 +25,20 @@ export function RecipesGrid() {
       <header className="mb-6 animate-rise">
         <h1 className="display text-3xl md:text-4xl">{t(locale, "recipesTitle")}</h1>
         <p className="mt-2 max-w-2xl text-ink-soft">{t(locale, "recipesDesc")}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(["breakfast", "lunch", "dinner", "snack"] as MealKey[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                meal === m ? "bg-brand text-white" : "border border-[var(--line)] bg-white"
+              }`}
+              onClick={() => setMeal(m)}
+            >
+              {t(locale, m)}
+            </button>
+          ))}
+        </div>
       </header>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {sorted.map((recipe, i) => {
@@ -72,7 +88,7 @@ export function RecipesGrid() {
                   <button
                     type="button"
                     className="btn btn-primary w-full text-sm"
-                    onClick={() => addRecipeToMeal(recipe.id, "lunch")}
+                    onClick={() => addRecipeToMeal(recipe.id, meal)}
                   >
                     {t(locale, "addToDiary")}
                   </button>

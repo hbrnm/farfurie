@@ -6,6 +6,7 @@ import { Timer, X } from "lucide-react";
 import { fastingProtocols, exercises } from "@/lib/activity";
 import {
   calcBmr,
+  calcCalorieGoal,
   calcTdee,
   type ActivityLevel,
   type GoalType,
@@ -13,7 +14,8 @@ import {
   type Sex,
 } from "@/lib/goals";
 import { t } from "@/lib/i18n";
-import { useBurnedToday, useFastingStatus } from "@/lib/selectors";
+import { useBurnedToday, useFastingStatus, useTodayKey } from "@/lib/selectors";
+import { onDate } from "@/lib/diary";
 import { useFarfurieStore } from "@/lib/store";
 
 function formatMins(mins: number) {
@@ -34,8 +36,13 @@ export function ProfileBoard() {
   const stopFasting = useFarfurieStore((s) => s.stopFasting);
   const logExercise = useFarfurieStore((s) => s.logExercise);
   const removeExercise = useFarfurieStore((s) => s.removeExercise);
+  const resetToday = useFarfurieStore((s) => s.resetToday);
+  const resetAllLogs = useFarfurieStore((s) => s.resetAllLogs);
+  const exportPayload = useFarfurieStore((s) => s.exportPayload);
   const exerciseLogs = useFarfurieStore((s) => s.exerciseLogs);
   const burnedToday = useBurnedToday();
+  const today = useTodayKey();
+  const todayLogs = onDate(exerciseLogs, today);
   const favoriteRecipeIds = useFarfurieStore((s) => s.favoriteRecipeIds);
 
   const [draft, setDraft] = useState<ProfileInput>(profile);
@@ -47,12 +54,7 @@ export function ProfileBoard() {
   }, [profile]);
 
   const preview = useMemo(() => {
-    const kcal = (() => {
-      const tdee = calcTdee(draft);
-      if (draft.goal === "lose") return Math.max(1200, tdee - 400);
-      if (draft.goal === "gain") return tdee + 300;
-      return tdee;
-    })();
+    const kcal = calcCalorieGoal(draft);
     return {
       bmr: calcBmr(draft),
       tdee: calcTdee(draft),
@@ -100,16 +102,22 @@ export function ProfileBoard() {
         <NumberField
           label={t(locale, "age")}
           value={draft.age}
+          min={14}
+          max={100}
           onChange={(v) => patch("age", v)}
         />
         <NumberField
           label={t(locale, "height")}
           value={draft.heightCm}
+          min={120}
+          max={230}
           onChange={(v) => patch("heightCm", v)}
         />
         <NumberField
           label={t(locale, "weight")}
           value={draft.weightKg}
+          min={35}
+          max={250}
           onChange={(v) => patch("weightKg", v)}
         />
         <Field label={t(locale, "activity")}>
@@ -195,6 +203,7 @@ export function ProfileBoard() {
       <section className="surface p-5">
         <h2 className="display text-2xl">{t(locale, "exercise")}</h2>
         <p className="mt-1 text-sm text-ink-soft">{t(locale, "exerciseDesc")}</p>
+        <p className="mt-2 text-xs text-ink-soft">{t(locale, "exerciseNote")}</p>
         <p className="mt-3 text-sm font-semibold text-brand">
           {t(locale, "burned")}: {burnedToday} kcal
         </p>
@@ -227,9 +236,9 @@ export function ProfileBoard() {
             {t(locale, "logExercise")}
           </button>
         </div>
-        {exerciseLogs.length > 0 && (
+        {todayLogs.length > 0 && (
           <ul className="mt-4 space-y-2">
-            {exerciseLogs.map((log) => (
+            {todayLogs.map((log) => (
               <li
                 key={log.id}
                 className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm"
@@ -276,6 +285,35 @@ export function ProfileBoard() {
         {t(locale, "favorites")}: {favoriteRecipeIds.length}{" "}
         {locale === "ro" ? "rețete" : "recipes"}
       </p>
+
+      <section className="surface space-y-3 p-5">
+        <p className="text-sm text-ink-soft">{t(locale, "disclaimer")}</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn btn-ghost text-sm"
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(exportPayload(), null, 2)], {
+                type: "application/json",
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `farfurie-${today}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            {t(locale, "exportData")}
+          </button>
+          <button type="button" className="btn btn-ghost text-sm" onClick={resetToday}>
+            {t(locale, "resetToday")}
+          </button>
+          <button type="button" className="btn btn-ghost text-sm" onClick={resetAllLogs}>
+            {t(locale, "resetAll")}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -299,15 +337,21 @@ function NumberField({
   label,
   value,
   onChange,
+  min,
+  max,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  min?: number;
+  max?: number;
 }) {
   return (
     <Field label={label}>
       <input
         type="number"
+        min={min}
+        max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full rounded-2xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm"

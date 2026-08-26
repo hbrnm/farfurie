@@ -422,7 +422,8 @@ export function searchFoods(query: string, locale: "ro" | "en"): Food[] {
   const q = query.trim().toLowerCase();
   if (!q) return foods.slice(0, 12);
   return foods.filter((f) => {
-    const blob = `${f.nameRo} ${f.nameEn} ${f.brand ?? ""} ${f.tags.join(" ")}`.toLowerCase();
+    const primary = locale === "ro" ? f.nameRo : f.nameEn;
+    const blob = `${primary} ${f.nameRo} ${f.nameEn} ${f.brand ?? ""} ${f.tags.join(" ")}`.toLowerCase();
     return blob.includes(q);
   });
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Figtree } from "next/font/google";
 import { PwaRegister } from "@/components/PwaRegister";
+import { HtmlLang } from "@/components/HtmlLang";
 import "./globals.css";
 
 const display = Fraunces({
@@ -36,7 +37,6 @@ export const viewport: Viewport = {
   themeColor: "#1b5e45",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
 
@@ -46,9 +46,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ro">
+    <html lang="ro" suppressHydrationWarning>
       <body className={`${display.variable} ${body.variable} antialiased`}>
         {children}
+        <HtmlLang />
         <PwaRegister />
       </body>
     </html>
