@@ -9,8 +9,10 @@ export function MacroRing() {
   const totals = useFarfurieStore((s) => s.totals());
   const remaining = useFarfurieStore((s) => s.remaining());
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
+  const burned = useFarfurieStore((s) => s.burnedToday());
 
-  const pct = Math.min(100, Math.round((totals.kcal / goals.kcal) * 100));
+  const budget = goals.kcal + burned;
+  const pct = Math.min(100, Math.round((totals.kcal / Math.max(budget, 1)) * 100));
   const radius = 54;
   const circ = 2 * Math.PI * radius;
   const offset = circ - (pct / 100) * circ;
@@ -70,7 +72,8 @@ export function MacroRing() {
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <p className="text-sm text-ink-soft">
-                {t(locale, "eaten")} · {totals.kcal} / {goals.kcal} kcal
+                {t(locale, "eaten")} · {totals.kcal} / {budget} kcal
+                {burned > 0 ? ` (+${burned} ${t(locale, "burned").toLowerCase()})` : ""}
               </p>
               {holidayMode && (
                 <p className="mt-1 text-xs font-semibold text-[var(--danger)]">

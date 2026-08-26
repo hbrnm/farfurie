@@ -6,6 +6,15 @@ import type { Locale } from "./i18n";
 import type { Macros } from "./foods";
 import { foods, macrosForGrams } from "./foods";
 import { recipes } from "./recipes";
+import {
+  calcBmr,
+  calcCalorieGoal,
+  calcMacroGoals,
+  calcTdee,
+  defaultProfile,
+  type ProfileInput,
+} from "./goals";
+import { exercises, type FastingProtocol, fastingProtocols } from "./activity";
 
 export type MealKey = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -18,6 +27,24 @@ export type DiaryEntry = {
   createdAt: string;
 };
 
+export type ShoppingItem = {
+  id: string;
+  nameRo: string;
+  nameEn: string;
+  checked: boolean;
+  fromRecipeId?: string;
+};
+
+export type ExerciseLog = {
+  id: string;
+  exerciseId: string;
+  nameRo: string;
+  nameEn: string;
+  minutes: number;
+  kcal: number;
+  createdAt: string;
+};
+
 type Goals = Macros & { waterMl: number };
 
 type State = {
@@ -26,6 +53,14 @@ type State = {
   waterMl: number;
   streak: number;
   entries: DiaryEntry[];
+  profile: ProfileInput;
+  goals: Goals;
+  favoriteRecipeIds: string[];
+  favoriteFoodIds: string[];
+  shopping: ShoppingItem[];
+  fastingProtocolId: string;
+  fastingStartedAt: string | null;
+  exerciseLogs: ExerciseLog[];
   setLocale: (locale: Locale) => void;
   toggleHoliday: () => void;
   addWater: () => void;
@@ -33,19 +68,39 @@ type State = {
   addFoodToMeal: (foodId: string, meal: MealKey, grams?: number) => void;
   addRecipeToMeal: (recipeId: string, meal: MealKey) => void;
   removeEntry: (id: string) => void;
+  setProfile: (profile: ProfileInput) => void;
+  applyProfileGoals: () => void;
+  toggleFavoriteRecipe: (id: string) => void;
+  toggleFavoriteFood: (id: string) => void;
+  addRecipeToShopping: (recipeId: string) => void;
+  toggleShoppingItem: (id: string) => void;
+  clearCheckedShopping: () => void;
+  clearShopping: () => void;
+  setFastingProtocol: (id: string) => void;
+  startFasting: () => void;
+  stopFasting: () => void;
+  logExercise: (exerciseId: string, minutes: number) => void;
+  removeExercise: (id: string) => void;
   baseGoals: () => Goals;
   effectiveGoals: () => Goals;
   totals: () => Macros;
   remaining: () => Macros;
+  burnedToday: () => number;
+  fastingStatus: () => {
+    protocol: FastingProtocol;
+    active: boolean;
+    phase: "fasting" | "eating" | "idle";
+    elapsedMin: number;
+    remainingMin: number;
+  };
 };
 
-const BASE: Goals = {
-  kcal: 2100,
-  protein: 130,
-  carbs: 220,
-  fat: 70,
-  waterMl: 2500,
-};
+function goalsFromProfile(profile: ProfileInput): Goals {
+  const kcal = calcCalorieGoal(profile);
+  return calcMacroGoals(kcal, profile.weightKg);
+}
+
+const INITIAL_GOALS = goalsFromProfile(defaultProfile);
 
 export const useFarfurieStore = create<State>()(
   persist(
@@ -54,6 +109,29 @@ export const useFarfurieStore = create<State>()(
       holidayMode: false,
       waterMl: 750,
       streak: 4,
+      profile: defaultProfile,
+      goals: INITIAL_GOALS,
+      favoriteRecipeIds: ["ovaz-napolact", "salata-ton"],
+      favoriteFoodIds: ["ton-scandia", "iaurt-napolact"],
+      shopping: [
+        {
+          id: "seed-shop-1",
+          nameRo: "150g iaurt Napolact",
+          nameEn: "150g Napolact yogurt",
+          checked: false,
+          fromRecipeId: "ovaz-napolact",
+        },
+        {
+          id: "seed-shop-2",
+          nameRo: "1 măr",
+          nameEn: "1 apple",
+          checked: true,
+          fromRecipeId: "ovaz-napolact",
+        },
+      ],
+      fastingProtocolId: "16-8",
+      fastingStartedAt: null,
+      exerciseLogs: [],
       entries: [
         {
           id: "seed-1",
@@ -110,16 +188,80 @@ export const useFarfurieStore = create<State>()(
       },
       removeEntry: (id) =>
         set((s) => ({ entries: s.entries.filter((e) => e.id !== id) })),
-      baseGoals: () => BASE,
+      setProfile: (profile) => set({ profile }),
+      applyProfileGoals: () => {
+        const goals = goalsFromProfile(get().profile);
+        set({ goals });
+      },
+      toggleFavoriteRecipe: (id) =>
+        set((s) => ({
+          favoriteRecipeIds: s.favoriteRecipeIds.includes(id)
+            ? s.favoriteRecipeIds.filter((x) => x !== id)
+            : [...s.favoriteRecipeIds, id],
+        })),
+      toggleFavoriteFood: (id) =>
+        set((s) => ({
+          favoriteFoodIds: s.favoriteFoodIds.includes(id)
+            ? s.favoriteFoodIds.filter((x) => x !== id)
+            : [...s.favoriteFoodIds, id],
+        })),
+      addRecipeToShopping: (recipeId) => {
+        const recipe = recipes.find((r) => r.id === recipeId);
+        if (!recipe) return;
+        const items: ShoppingItem[] = recipe.ingredientsRo.map((nameRo, i) => ({
+          id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 5)}`,
+          nameRo,
+          nameEn: recipe.ingredientsEn[i] ?? nameRo,
+          checked: false,
+          fromRecipeId: recipeId,
+        }));
+        set((s) => ({ shopping: [...s.shopping, ...items] }));
+      },
+      toggleShoppingItem: (id) =>
+        set((s) => ({
+          shopping: s.shopping.map((item) =>
+            item.id === id ? { ...item, checked: !item.checked } : item,
+          ),
+        })),
+      clearCheckedShopping: () =>
+        set((s) => ({ shopping: s.shopping.filter((i) => !i.checked) })),
+      clearShopping: () => set({ shopping: [] }),
+      setFastingProtocol: (id) => set({ fastingProtocolId: id }),
+      startFasting: () => set({ fastingStartedAt: new Date().toISOString() }),
+      stopFasting: () => set({ fastingStartedAt: null }),
+      logExercise: (exerciseId, minutes) => {
+        const ex = exercises.find((e) => e.id === exerciseId);
+        if (!ex || minutes <= 0) return;
+        const kcal = Math.round(ex.kcalPerMin * minutes);
+        set((s) => ({
+          exerciseLogs: [
+            ...s.exerciseLogs,
+            {
+              id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              exerciseId,
+              nameRo: ex.nameRo,
+              nameEn: ex.nameEn,
+              minutes,
+              kcal,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+      },
+      removeExercise: (id) =>
+        set((s) => ({
+          exerciseLogs: s.exerciseLogs.filter((e) => e.id !== id),
+        })),
+      baseGoals: () => get().goals,
       effectiveGoals: () => {
-        const holiday = get().holidayMode;
-        if (!holiday) return BASE;
+        const base = get().goals;
+        if (!get().holidayMode) return base;
         return {
-          kcal: Math.round(BASE.kcal * 1.15),
-          protein: BASE.protein,
-          carbs: Math.round(BASE.carbs * 1.15),
-          fat: Math.round(BASE.fat * 1.15),
-          waterMl: BASE.waterMl,
+          kcal: Math.round(base.kcal * 1.15),
+          protein: base.protein,
+          carbs: Math.round(base.carbs * 1.15),
+          fat: Math.round(base.fat * 1.15),
+          waterMl: base.waterMl,
         };
       },
       totals: () => {
@@ -136,14 +278,58 @@ export const useFarfurieStore = create<State>()(
       remaining: () => {
         const goals = get().effectiveGoals();
         const totals = get().totals();
+        const burned = get().burnedToday();
+        // Net-style remaining: burned adds back to budget (optional MFP-like)
+        const budget = goals.kcal + burned;
         return {
-          kcal: goals.kcal - totals.kcal,
+          kcal: budget - totals.kcal,
           protein: Math.round((goals.protein - totals.protein) * 10) / 10,
           carbs: Math.round((goals.carbs - totals.carbs) * 10) / 10,
           fat: Math.round((goals.fat - totals.fat) * 10) / 10,
         };
       },
+      burnedToday: () =>
+        get().exerciseLogs.reduce((a, e) => a + e.kcal, 0),
+      fastingStatus: () => {
+        const protocol =
+          fastingProtocols.find((p) => p.id === get().fastingProtocolId) ??
+          fastingProtocols[0];
+        const started = get().fastingStartedAt;
+        if (!started) {
+          return {
+            protocol,
+            active: false,
+            phase: "idle" as const,
+            elapsedMin: 0,
+            remainingMin: protocol.fastHours * 60,
+          };
+        }
+        const elapsedMin = Math.floor(
+          (Date.now() - new Date(started).getTime()) / 60000,
+        );
+        const cycleMin = (protocol.fastHours + protocol.eatHours) * 60;
+        const inCycle = ((elapsedMin % cycleMin) + cycleMin) % cycleMin;
+        const fastingMin = protocol.fastHours * 60;
+        if (inCycle < fastingMin) {
+          return {
+            protocol,
+            active: true,
+            phase: "fasting" as const,
+            elapsedMin: inCycle,
+            remainingMin: fastingMin - inCycle,
+          };
+        }
+        return {
+          protocol,
+          active: true,
+          phase: "eating" as const,
+          elapsedMin: inCycle - fastingMin,
+          remainingMin: cycleMin - inCycle,
+        };
+      },
     }),
-    { name: "farfurie-demo-v1" },
+    { name: "farfurie-demo-v2" },
   ),
 );
+
+export { calcBmr, calcTdee };

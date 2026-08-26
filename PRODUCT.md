@@ -67,6 +67,15 @@ Not a translation afterthought: bilingual UI, bilingual food names, portion labe
 9. Language switch RO/EN
 10. Local persistence (demo profile)
 
+## Shipped in v1.1
+
+11. Profile + Mifflin–St Jeor BMR/TDEE calorie & macro goals
+12. Shopping list from recipes
+13. Recipe favorites
+14. Intermittent fasting timer (16:8, 14:10, 18:6, OMAD)
+15. Exercise logging (burned kcal returns to daily budget)
+16. Expanded RO supermarket / traditional food seed DB
+
 ## Later (v2+)
 
 - Barcode scan + AI photo estimate
@@ -74,3 +83,4 @@ Not a translation afterthought: bilingual UI, bilingual food names, portion labe
 - Wearable sync
 - Community verified recipes
 - Native iOS/Android
+- Multi-day meal planner

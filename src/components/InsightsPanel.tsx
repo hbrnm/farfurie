@@ -10,9 +10,12 @@ export function InsightsPanel() {
   const streak = useFarfurieStore((s) => s.streak);
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const entries = useFarfurieStore((s) => s.entries);
+  const profile = useFarfurieStore((s) => s.profile);
+  const burned = useFarfurieStore((s) => s.burnedToday());
 
   const proteinPct = Math.round((totals.protein / goals.protein) * 100);
   const week = [1800, 2050, 1920, 2210, totals.kcal, 0, 0];
+  const goalLabel = t(locale, profile.goal);
 
   return (
     <div className="space-y-6">
@@ -28,7 +31,7 @@ export function InsightsPanel() {
       <div className="grid gap-4 md:grid-cols-3">
         <article className="surface p-5">
           <p className="text-sm text-ink-soft">{t(locale, "demoProfile")}</p>
-          <p className="display mt-1 text-2xl">{t(locale, "weightGoal")}</p>
+          <p className="display mt-1 text-2xl">{goalLabel}</p>
           <p className="mt-2 text-sm text-ink-soft">
             {goals.kcal} kcal · {goals.protein}g {t(locale, "protein").toLowerCase()}
           </p>
@@ -38,11 +41,25 @@ export function InsightsPanel() {
           <p className="display mt-1 text-2xl">{streak}</p>
         </article>
         <article className="surface p-5">
+          <p className="text-sm text-ink-soft">{t(locale, "burned")}</p>
+          <p className="display mt-1 text-2xl">{burned}</p>
+          <p className="mt-2 text-sm text-ink-soft">kcal</p>
+        </article>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <article className="surface p-5">
           <p className="text-sm text-ink-soft">{t(locale, "protein")}</p>
           <p className="display mt-1 text-2xl">{proteinPct}%</p>
           <p className="mt-2 text-sm text-ink-soft">
             {totals.protein}g / {goals.protein}g
           </p>
+        </article>
+        <article className="surface p-5">
+          <p className="text-sm text-ink-soft">
+            {locale === "ro" ? "Mese logate azi" : "Meals logged today"}
+          </p>
+          <p className="display mt-1 text-2xl">{entries.length}</p>
         </article>
       </div>
 
@@ -53,14 +70,19 @@ export function InsightsPanel() {
         <div className="flex h-40 items-end gap-2">
           {week.map((v, i) => {
             const h = v === 0 ? 8 : Math.max(12, Math.round((v / 2600) * 100));
-            const labels = locale === "ro"
-              ? ["L", "Ma", "Mi", "J", "V", "S", "D"]
-              : ["M", "T", "W", "T", "F", "S", "S"];
+            const labels =
+              locale === "ro"
+                ? ["L", "Ma", "Mi", "J", "V", "S", "D"]
+                : ["M", "T", "W", "T", "F", "S", "S"];
             return (
               <div key={i} className="flex flex-1 flex-col items-center gap-2">
                 <div
                   className="w-full rounded-t-xl bg-gradient-to-t from-brand to-accent transition-all"
-                  style={{ height: `${h}%`, minHeight: v ? undefined : 8, opacity: v ? 1 : 0.25 }}
+                  style={{
+                    height: `${h}%`,
+                    minHeight: v ? undefined : 8,
+                    opacity: v ? 1 : 0.25,
+                  }}
                 />
                 <span className="text-xs font-semibold text-ink-soft">{labels[i]}</span>
               </div>
@@ -79,16 +101,6 @@ export function InsightsPanel() {
           </p>
         </section>
       )}
-
-      <section className="surface p-5">
-        <h2 className="display mb-3 text-2xl">
-          {locale === "ro" ? "Mese logate azi" : "Meals logged today"}
-        </h2>
-        <p className="text-sm text-ink-soft">
-          {entries.length}{" "}
-          {locale === "ro" ? "intrări în jurnal" : "diary entries"}
-        </p>
-      </section>
     </div>
   );
 }

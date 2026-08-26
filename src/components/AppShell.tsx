@@ -2,16 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Home, ShoppingBasket, Soup, TrendingUp } from "lucide-react";
+import {
+  BookOpen,
+  ClipboardList,
+  Home,
+  ShoppingBasket,
+  UserRound,
+} from "lucide-react";
 import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
 
 const links = [
   { href: "/app", key: "navDiary" as const, icon: Home },
   { href: "/app/recipes", key: "navRecipes" as const, icon: BookOpen },
+  { href: "/app/list", key: "navList" as const, icon: ClipboardList },
   { href: "/app/market", key: "navMarket" as const, icon: ShoppingBasket },
-  { href: "/app/pot", key: "navPot" as const, icon: Soup },
-  { href: "/app/insights", key: "navInsights" as const, icon: TrendingUp },
+  { href: "/app/profile", key: "navProfile" as const, icon: UserRound },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
