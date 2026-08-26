@@ -1,12 +1,16 @@
 "use client";
 
 import { t } from "@/lib/i18n";
-import { useFarfurieStore } from "@/lib/store";
+import {
+  useEffectiveGoals,
+  useFarfurieStore,
+  useTotals,
+} from "@/lib/store";
 
 export function InsightsPanel() {
   const locale = useFarfurieStore((s) => s.locale);
-  const totals = useFarfurieStore((s) => s.totals());
-  const goals = useFarfurieStore((s) => s.effectiveGoals());
+  const totals = useTotals();
+  const goals = useEffectiveGoals();
   const streak = useFarfurieStore((s) => s.streak);
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const entries = useFarfurieStore((s) => s.entries);

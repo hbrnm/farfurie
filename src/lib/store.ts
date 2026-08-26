@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useShallow } from "zustand/react/shallow";
 import type { Locale } from "./i18n";
 import type { Macros } from "./foods";
 import { foods, macrosForGrams } from "./foods";
@@ -399,3 +400,20 @@ export const useFarfurieStore = create<State>()(
 );
 
 export { calcBmr, calcTdee, todayDayKey };
+
+/**
+ * Object-returning store getters must be wrapped with useShallow.
+ * Zustand v5 + React 19 compare snapshots with Object.is; a new object
+ * every call causes "Maximum update depth exceeded" (minified #185).
+ */
+export function useEffectiveGoals() {
+  return useFarfurieStore(useShallow((s) => s.effectiveGoals()));
+}
+
+export function useTotals() {
+  return useFarfurieStore(useShallow((s) => s.totals()));
+}
+
+export function useRemaining() {
+  return useFarfurieStore(useShallow((s) => s.remaining()));
+}

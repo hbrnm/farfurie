@@ -5,14 +5,14 @@ import { Plus, Sparkles, X } from "lucide-react";
 import { foodName, foodUnit, searchFoods } from "@/lib/foods";
 import { fillTheGap } from "@/lib/fillGap";
 import { t } from "@/lib/i18n";
-import { type MealKey, useFarfurieStore } from "@/lib/store";
+import { type MealKey, useFarfurieStore, useRemaining } from "@/lib/store";
 
 const meals: MealKey[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export function DiaryBoard() {
   const locale = useFarfurieStore((s) => s.locale);
   const entries = useFarfurieStore((s) => s.entries);
-  const remaining = useFarfurieStore((s) => s.remaining());
+  const remaining = useRemaining();
   const addFoodToMeal = useFarfurieStore((s) => s.addFoodToMeal);
   const addRecipeToMeal = useFarfurieStore((s) => s.addRecipeToMeal);
   const addEntry = useFarfurieStore((s) => s.addEntry);

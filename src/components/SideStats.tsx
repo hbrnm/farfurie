@@ -2,14 +2,14 @@
 
 import { Droplets, Flame } from "lucide-react";
 import { t } from "@/lib/i18n";
-import { useFarfurieStore } from "@/lib/store";
+import { useEffectiveGoals, useFarfurieStore } from "@/lib/store";
 
 export function SideStats() {
   const locale = useFarfurieStore((s) => s.locale);
   const waterMl = useFarfurieStore((s) => s.waterMl);
   const streak = useFarfurieStore((s) => s.streak);
   const addWater = useFarfurieStore((s) => s.addWater);
-  const goals = useFarfurieStore((s) => s.effectiveGoals());
+  const goals = useEffectiveGoals();
   const waterPct = Math.min(100, Math.round((waterMl / goals.waterMl) * 100));
 
   return (
