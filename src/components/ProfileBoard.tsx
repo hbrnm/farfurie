@@ -319,6 +319,14 @@ export function ProfileBoard() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2">
+        <Link href="/app/account" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navAccount")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "accountDesc")}</p>
+        </Link>
+        <Link href="/app/plate" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navPlate")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "platePhotoDesc")}</p>
+        </Link>
         <Link href="/app/scan" className="surface block p-5 transition hover:-translate-y-0.5">
           <p className="display text-xl">{t(locale, "navScan")}</p>
           <p className="mt-1 text-sm text-ink-soft">{t(locale, "moreScan")}</p>

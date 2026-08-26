@@ -612,10 +612,15 @@ export function pricePer20gProtein(food: Food): number | null {
   return Math.round(ronPerGramProtein * 20 * 100) / 100;
 }
 
-export function searchFoods(query: string, locale: "ro" | "en"): Food[] {
+export function resolveFood(id: string, extra: Food[] = []): Food | undefined {
+  return extra.find((f) => f.id === id) ?? foods.find((f) => f.id === id);
+}
+
+export function searchFoods(query: string, locale: "ro" | "en", extra: Food[] = []): Food[] {
   const q = query.trim().toLowerCase();
-  if (!q) return foods.slice(0, 12);
-  return foods.filter((f) => {
+  const pool = extra.length ? [...extra, ...foods] : foods;
+  if (!q) return pool.slice(0, 12);
+  return pool.filter((f) => {
     const blob =
       `${f.nameRo} ${f.nameEn} ${f.brand ?? ""} ${f.tags.join(" ")} ${f.ean ?? ""}`.toLowerCase();
     return blob.includes(q);

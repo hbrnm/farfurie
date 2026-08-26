@@ -28,10 +28,12 @@ const links = [
 
 const moreLinks = [
   { href: "/app/scan", key: "navScan" as const },
+  { href: "/app/plate", key: "navPlate" as const },
   { href: "/app/coach", key: "navCoach" as const },
   { href: "/app/builder", key: "navBuilder" as const },
   { href: "/app/compare", key: "navCompare" as const },
   { href: "/app/insights", key: "navInsights" as const },
+  { href: "/app/account", key: "navAccount" as const },
   { href: "/app/market", key: "navMarket" as const },
   { href: "/app/pot", key: "navPot" as const },
   { href: "/app/profile", key: "navProfile" as const },

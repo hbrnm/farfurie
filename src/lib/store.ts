@@ -5,8 +5,9 @@ import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { Locale } from "./i18n";
 import type { Macros } from "./foods";
-import { foods, macrosForGrams } from "./foods";
+import { macrosForGrams, resolveFood, type Food } from "./foods";
 import { recipes } from "./recipes";
+import type { FarfurieSnapshot } from "./snapshot";
 import {
   calcBmr,
   calcCalorieGoal,
@@ -114,6 +115,7 @@ type State = {
   recoveryUntil: string | null;
   lastAddedId: string | null;
   targetWeightKg: number;
+  catalogFoods: Food[];
   setLocale: (locale: Locale) => void;
   toggleHoliday: () => void;
   setSelectedDate: (date: string) => void;
@@ -171,6 +173,9 @@ type State = {
     name: string,
     items: SavedMeal["items"],
   ) => void;
+  addCatalogFood: (food: Food) => void;
+  exportSnapshot: () => FarfurieSnapshot;
+  importSnapshot: (snapshot: FarfurieSnapshot) => void;
   fastingStatus: () => {
     protocol: FastingProtocol;
     active: boolean;
@@ -261,6 +266,7 @@ export const useFarfurieStore = create<State>()(
       recoveryUntil: null,
       lastAddedId: null,
       targetWeightKg: 64,
+      catalogFoods: [],
       profile: defaultProfile,
       goals: INITIAL_GOALS,
       favoriteRecipeIds: ["ovaz-napolact", "salata-ton"],
@@ -352,7 +358,7 @@ export const useFarfurieStore = create<State>()(
         }));
       },
       addFoodToMeal: (foodId, meal, grams) => {
-        const food = foods.find((f) => f.id === foodId);
+        const food = resolveFood(foodId, get().catalogFoods);
         if (!food) return;
         const g = grams ?? food.defaultGrams;
         const macros = macrosForGrams(food, g);
@@ -507,6 +513,68 @@ export const useFarfurieStore = create<State>()(
             },
           ],
         }));
+      },
+      addCatalogFood: (food) =>
+        set((s) => ({
+          catalogFoods: [
+            food,
+            ...s.catalogFoods.filter((f) => f.id !== food.id && f.ean !== food.ean),
+          ].slice(0, 200),
+        })),
+      exportSnapshot: () => {
+        const s = get();
+        return {
+          v: 1,
+          updatedAt: new Date().toISOString(),
+          locale: s.locale,
+          holidayMode: s.holidayMode,
+          waterByDate: s.waterByDate,
+          entries: s.entries,
+          profile: s.profile,
+          goals: s.goals,
+          favoriteRecipeIds: s.favoriteRecipeIds,
+          favoriteFoodIds: s.favoriteFoodIds,
+          shopping: s.shopping,
+          fastingProtocolId: s.fastingProtocolId,
+          fastingStartedAt: s.fastingStartedAt,
+          exerciseLogs: s.exerciseLogs,
+          onboardingDone: s.onboardingDone,
+          weekPlan: s.weekPlan,
+          theme: s.theme,
+          dayNotes: s.dayNotes,
+          weightLogs: s.weightLogs,
+          savedMeals: s.savedMeals,
+          recoveryUntil: s.recoveryUntil,
+          targetWeightKg: s.targetWeightKg,
+          catalogFoods: s.catalogFoods,
+        };
+      },
+      importSnapshot: (snapshot) => {
+        set({
+          locale: snapshot.locale,
+          holidayMode: snapshot.holidayMode,
+          waterByDate: snapshot.waterByDate,
+          entries: snapshot.entries,
+          profile: snapshot.profile,
+          goals: snapshot.goals,
+          favoriteRecipeIds: snapshot.favoriteRecipeIds,
+          favoriteFoodIds: snapshot.favoriteFoodIds,
+          shopping: snapshot.shopping,
+          fastingProtocolId: snapshot.fastingProtocolId,
+          fastingStartedAt: snapshot.fastingStartedAt,
+          exerciseLogs: snapshot.exerciseLogs,
+          onboardingDone: snapshot.onboardingDone,
+          weekPlan: snapshot.weekPlan,
+          theme: snapshot.theme,
+          dayNotes: snapshot.dayNotes,
+          weightLogs: snapshot.weightLogs,
+          savedMeals: snapshot.savedMeals,
+          recoveryUntil: snapshot.recoveryUntil,
+          targetWeightKg: snapshot.targetWeightKg,
+          catalogFoods: snapshot.catalogFoods,
+          lastAddedId: null,
+          selectedDate: localISO(),
+        });
       },
       setProfile: (profile) => set({ profile }),
       applyProfileGoals: () => {
@@ -696,7 +764,7 @@ export const useFarfurieStore = create<State>()(
     }),
     {
       name: "farfurie-demo-v3",
-      version: 6,
+      version: 7,
       skipHydration: true,
       migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
@@ -733,6 +801,7 @@ export const useFarfurieStore = create<State>()(
           recoveryUntil: typeof s.recoveryUntil === "string" ? s.recoveryUntil : null,
           lastAddedId: null,
           targetWeightKg: typeof s.targetWeightKg === "number" ? s.targetWeightKg : 64,
+          catalogFoods: Array.isArray(s.catalogFoods) ? s.catalogFoods : [],
         } as never;
       },
       onRehydrateStorage: () => () => {

@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ScanBarcode, X } from "lucide-react";
-import { foodFromBarcode } from "@/lib/barcodes";
 import {
   foodName,
   foodUnit,
@@ -14,6 +13,7 @@ import {
   type Food,
 } from "@/lib/foods";
 import { t } from "@/lib/i18n";
+import { lookupBarcodeLive, searchFoodsLive } from "@/lib/off-client";
 import { type MealKey, useFarfurieStore } from "@/lib/store";
 
 const PORTIONS = [0.5, 1, 1.5, 2];
@@ -34,6 +34,8 @@ export function AddFoodSheet({
   const allEntries = useFarfurieStore((s) => s.entries);
   const savedMeals = useFarfurieStore((s) => s.savedMeals);
   const addSavedMealToDiary = useFarfurieStore((s) => s.addSavedMealToDiary);
+  const catalogFoods = useFarfurieStore((s) => s.catalogFoods);
+  const addCatalogFood = useFarfurieStore((s) => s.addCatalogFood);
 
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<Food | null>(null);
@@ -44,8 +46,12 @@ export function AddFoodSheet({
   const [customCarbs, setCustomCarbs] = useState(20);
   const [customFat, setCustomFat] = useState(8);
   const [barcodeMsg, setBarcodeMsg] = useState("");
+  const [offHits, setOffHits] = useState<Food[]>([]);
 
-  const results = useMemo(() => searchFoods(query, locale), [query, locale]);
+  const results = useMemo(
+    () => searchFoods(query, locale, catalogFoods),
+    [query, locale, catalogFoods],
+  );
   const macros = picked ? macrosForGrams(picked, grams) : null;
   const recent = useMemo(() => {
     const seen = new Set<string>();
@@ -61,20 +67,40 @@ export function AddFoodSheet({
   }, [allEntries]);
   const favorites = foods.filter((f) => favoriteFoodIds.includes(f.id));
 
-  const applyBarcode = (raw: string) => {
-    const food = foodFromBarcode(raw);
-    if (!food) {
-      setBarcodeMsg(t(locale, "notFoundBarcode"));
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 3 || /^\d{8,}$/.test(q)) {
+      setOffHits([]);
       return;
     }
-    setPicked(food);
-    setGrams(food.defaultGrams);
-    setQuery(foodName(food, locale));
-    setBarcodeMsg(`${foodName(food, locale)}${food.brand ? ` · ${food.brand}` : ""}`);
+    const id = window.setTimeout(() => {
+      void searchFoodsLive(q).then(setOffHits);
+    }, 400);
+    return () => window.clearTimeout(id);
+  }, [query]);
+
+  const applyBarcode = (raw: string) => {
+    void (async () => {
+      const food = await lookupBarcodeLive(raw);
+      if (!food) {
+        setBarcodeMsg(t(locale, "notFoundBarcode"));
+        return;
+      }
+      addCatalogFood(food);
+      setPicked(food);
+      setGrams(food.defaultGrams);
+      setQuery(foodName(food, locale));
+      setBarcodeMsg(
+        `${foodName(food, locale)}${food.brand ? ` · ${food.brand}` : ""}${
+          food.id.startsWith("off-") ? " · Open Food Facts" : ""
+        }`,
+      );
+    })();
   };
 
   const confirmFood = () => {
     if (!picked) return;
+    addCatalogFood(picked);
     addFoodToMeal(picked.id, meal, grams);
     onClose();
   };
@@ -116,10 +142,14 @@ export function AddFoodSheet({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            const byEan = foodFromBarcode(e.target.value);
-            if (byEan) {
-              setPicked(byEan);
-              setGrams(byEan.defaultGrams);
+            const digits = e.target.value.replace(/\D/g, "");
+            if (digits.length >= 8 && digits.length <= 14) {
+              void lookupBarcodeLive(digits).then((food) => {
+                if (!food) return;
+                addCatalogFood(food);
+                setPicked(food);
+                setGrams(food.defaultGrams);
+              });
             }
           }}
           placeholder={t(locale, "searchFood")}
@@ -235,7 +265,7 @@ export function AddFoodSheet({
         )}
 
         <ul className="space-y-2">
-          {results.length === 0 && (
+          {results.length === 0 && offHits.length === 0 && (
             <li className="text-sm text-ink-soft">{t(locale, "noResults")}</li>
           )}
           {results.map((food) => (
@@ -269,6 +299,40 @@ export function AddFoodSheet({
             </li>
           ))}
         </ul>
+        {offHits.filter((f) => !results.some((r) => r.ean && r.ean === f.ean)).length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+              Open Food Facts
+            </p>
+            <ul className="space-y-2">
+              {offHits
+                .filter((f) => !results.some((r) => r.ean && r.ean === f.ean))
+                .map((food) => (
+                  <li key={food.id}>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-brand/20 bg-brand/5 px-3 py-3 text-left"
+                      onClick={() => {
+                        addCatalogFood(food);
+                        setPicked(food);
+                        setGrams(food.defaultGrams);
+                      }}
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">{foodName(food, locale)}</p>
+                        <p className="text-xs text-ink-soft">
+                          {food.brand ?? "OFF"} · {food.ean}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold text-brand">
+                        {Math.round((food.per100g.kcal * food.defaultGrams) / 100)} kcal
+                      </span>
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
 
         <form
           className="mt-5 space-y-3 rounded-2xl border border-dashed border-[var(--line)] bg-white/60 p-3"
