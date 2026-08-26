@@ -30,8 +30,23 @@ function num(value: unknown): number | null {
   return null;
 }
 
+function decodeEntities(value: string) {
+  return value
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&frac14;/g, "¼")
+    .replace(/&frac12;/g, "½")
+    .replace(/&frac34;/g, "¾")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+}
+
 function textOf(value: unknown): string {
-  if (typeof value === "string") return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (typeof value === "string") {
+    return decodeEntities(value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+  }
   if (value && typeof value === "object" && "text" in value) return textOf((value as { text: unknown }).text);
   return "";
 }
