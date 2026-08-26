@@ -2,14 +2,20 @@
 
 import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
+import {
+  useBurnedToday,
+  useEffectiveGoals,
+  useRemaining,
+  useTotals,
+} from "@/lib/selectors";
 
 export function MacroRing() {
   const locale = useFarfurieStore((s) => s.locale);
-  const goals = useFarfurieStore((s) => s.effectiveGoals());
-  const totals = useFarfurieStore((s) => s.totals());
-  const remaining = useFarfurieStore((s) => s.remaining());
+  const goals = useEffectiveGoals();
+  const totals = useTotals();
+  const remaining = useRemaining();
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
-  const burned = useFarfurieStore((s) => s.burnedToday());
+  const burned = useBurnedToday();
 
   const budget = goals.kcal + burned;
   const pct = Math.min(100, Math.round((totals.kcal / Math.max(budget, 1)) * 100));

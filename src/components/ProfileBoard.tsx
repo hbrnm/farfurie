@@ -13,6 +13,7 @@ import {
   type Sex,
 } from "@/lib/goals";
 import { t } from "@/lib/i18n";
+import { useBurnedToday, useFastingStatus } from "@/lib/selectors";
 import { useFarfurieStore } from "@/lib/store";
 
 function formatMins(mins: number) {
@@ -31,26 +32,19 @@ export function ProfileBoard() {
   const setFastingProtocol = useFarfurieStore((s) => s.setFastingProtocol);
   const startFasting = useFarfurieStore((s) => s.startFasting);
   const stopFasting = useFarfurieStore((s) => s.stopFasting);
-  const fastingStatus = useFarfurieStore((s) => s.fastingStatus);
   const logExercise = useFarfurieStore((s) => s.logExercise);
   const removeExercise = useFarfurieStore((s) => s.removeExercise);
   const exerciseLogs = useFarfurieStore((s) => s.exerciseLogs);
-  const burnedToday = useFarfurieStore((s) => s.burnedToday);
+  const burnedToday = useBurnedToday();
   const favoriteRecipeIds = useFarfurieStore((s) => s.favoriteRecipeIds);
 
   const [draft, setDraft] = useState<ProfileInput>(profile);
   const [exId, setExId] = useState(exercises[0].id);
   const [mins, setMins] = useState(30);
-  const [, tick] = useState(0);
 
   useEffect(() => {
     setDraft(profile);
   }, [profile]);
-
-  useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 30000);
-    return () => clearInterval(id);
-  }, []);
 
   const preview = useMemo(() => {
     const kcal = (() => {
@@ -66,7 +60,7 @@ export function ProfileBoard() {
     };
   }, [draft]);
 
-  const status = fastingStatus();
+  const status = useFastingStatus();
 
   const patch = <K extends keyof ProfileInput>(key: K, value: ProfileInput[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
@@ -202,7 +196,7 @@ export function ProfileBoard() {
         <h2 className="display text-2xl">{t(locale, "exercise")}</h2>
         <p className="mt-1 text-sm text-ink-soft">{t(locale, "exerciseDesc")}</p>
         <p className="mt-3 text-sm font-semibold text-brand">
-          {t(locale, "burned")}: {burnedToday()} kcal
+          {t(locale, "burned")}: {burnedToday} kcal
         </p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <select

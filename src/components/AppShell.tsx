@@ -9,6 +9,7 @@ import {
   Home,
   UserRound,
 } from "lucide-react";
+import { ClientOnly } from "@/components/ClientOnly";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
@@ -22,6 +23,14 @@ const links = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <ClientOnly>
+      <AppShellInner>{children}</AppShellInner>
+    </ClientOnly>
+  );
+}
+
+function AppShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const locale = useFarfurieStore((s) => s.locale);
   const setLocale = useFarfurieStore((s) => s.setLocale);

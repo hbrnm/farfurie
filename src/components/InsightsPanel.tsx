@@ -1,17 +1,18 @@
 "use client";
 
 import { t } from "@/lib/i18n";
+import { useBurnedToday, useEffectiveGoals, useTotals } from "@/lib/selectors";
 import { useFarfurieStore } from "@/lib/store";
 
 export function InsightsPanel() {
   const locale = useFarfurieStore((s) => s.locale);
-  const totals = useFarfurieStore((s) => s.totals());
-  const goals = useFarfurieStore((s) => s.effectiveGoals());
+  const totals = useTotals();
+  const goals = useEffectiveGoals();
   const streak = useFarfurieStore((s) => s.streak);
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const entries = useFarfurieStore((s) => s.entries);
   const profile = useFarfurieStore((s) => s.profile);
-  const burned = useFarfurieStore((s) => s.burnedToday());
+  const burned = useBurnedToday();
 
   const proteinPct = Math.round((totals.protein / goals.protein) * 100);
   const week = [1800, 2050, 1920, 2210, totals.kcal, 0, 0];
