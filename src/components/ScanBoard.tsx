@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, ScanBarcode } from "lucide-react";
 import { DEMO_BARCODES } from "@/lib/barcodes";
-import { foodName, foodUnit, macrosForGrams } from "@/lib/foods";
+import { foodName, foodUnit, macrosForGrams, searchFoods } from "@/lib/foods";
 import { t } from "@/lib/i18n";
 import { lookupBarcodeLive, searchFoodsLive } from "@/lib/off-client";
 import { type MealKey, useFarfurieStore } from "@/lib/store";
@@ -30,7 +30,16 @@ export function ScanBoard() {
     setLoading(true);
     setMsg("");
     try {
-      const food = await lookupBarcodeLive(raw);
+      const digits = raw.replace(/\D/g, "");
+      let food =
+        digits.length >= 8 ? await lookupBarcodeLive(raw) : null;
+      if (!food && raw.trim().length >= 2 && !/^\d+$/.test(raw.trim())) {
+        const [live, local] = await Promise.all([
+          searchFoodsLive(raw),
+          Promise.resolve(searchFoods(raw, locale)),
+        ]);
+        food = local[0] ?? live[0] ?? null;
+      }
       if (!food) {
         setMsg(t(locale, "notFoundBarcode"));
         return;

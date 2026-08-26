@@ -1,6 +1,6 @@
 import jpeg from "jpeg-js";
 import { searchOffProducts } from "@/lib/server/off";
-import { foods, macrosForGrams, type Food } from "@/lib/foods";
+import { foods, macrosForGrams, searchFoods, type Food } from "@/lib/foods";
 import { plateTemplates } from "@/lib/plates";
 import type { PlateEstimate, PlateGuess } from "@/lib/plate-types";
 
@@ -58,19 +58,24 @@ function foodById(id: string) {
 }
 
 async function fromHint(hint: string): Promise<PlateGuess[] | null> {
-  const q = hint.trim().toLowerCase();
-  if (q.length < 2) return null;
-  const local = foods.filter((f) =>
-    `${f.nameRo} ${f.nameEn} ${f.brand ?? ""}`.toLowerCase().includes(q.split(/\s+/)[0] ?? q),
-  );
+  if (hint.trim().length < 2) return null;
+  const local = searchFoods(hint, "ro");
   const off = await searchOffProducts(hint, true).catch(() => []);
-  const picked = [...local.slice(0, 2), ...off.slice(0, 2)];
+  const seen = new Set<string>();
+  const picked: Food[] = [];
+  for (const food of [...local, ...off]) {
+    const key = food.ean || food.id;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    picked.push(food);
+    if (picked.length >= 3) break;
+  }
   if (picked.length === 0) return null;
   return itemsFromFoods(
-    picked.slice(0, 3).map((food, i) => ({
+    picked.map((food, i) => ({
       food,
       grams: food.defaultGrams,
-      confidence: 0.55 - i * 0.08,
+      confidence: 0.62 - i * 0.08,
     })),
   );
 }
