@@ -5,7 +5,7 @@ import { t } from "@/lib/i18n";
 import { isWeekendISO, lastNDates, localISO, weekISODates } from "@/lib/dates";
 import { foods } from "@/lib/foods";
 import { nutritionistCsv } from "@/lib/share";
-import { useBurnedToday, useCurrentStreak, useEffectiveGoals, useMetabolism, useTotals, useWeekKcal } from "@/lib/selectors";
+import { useBurnedToday, useCurrentStreak, useEffectiveGoals, useMetabolism, useTotals, useWeekBudget, useWeekKcal } from "@/lib/selectors";
 import { useFarfurieStore } from "@/lib/store";
 
 const DRINK_IDS = new Set(foods.filter((f) => f.category === "drink").map((f) => f.id));
@@ -28,6 +28,7 @@ export function InsightsPanel() {
   const targetWeightKg = useFarfurieStore((s) => s.targetWeightKg);
   const recovery = useFarfurieStore((s) => s.isRecovery());
   const report = useMetabolism();
+  const weekBank = useWeekBudget();
   const startRecovery = useFarfurieStore((s) => s.startRecovery);
   const stopRecovery = useFarfurieStore((s) => s.stopRecovery);
   const exercises = useFarfurieStore((s) => s.exerciseLogs);
@@ -117,9 +118,20 @@ export function InsightsPanel() {
         <article className="surface p-5">
           <p className="text-sm text-ink-soft">{t(locale, "burned")}</p>
           <p className="display mt-1 text-2xl">{burned}</p>
-          <p className="mt-2 text-sm text-ink-soft">kcal</p>
+          <p className="mt-2 text-xs text-ink-soft">{t(locale, "noEatBack")}</p>
         </article>
       </div>
+
+      <article className="surface p-5">
+        <p className="text-sm text-ink-soft">{t(locale, "weekBank")}</p>
+        <p className="display mt-1 text-2xl">
+          {weekBank.weeklyEaten} / {weekBank.weeklyTarget}
+        </p>
+        <p className="mt-2 text-sm text-ink-soft">
+          {weekBank.daysLeft} {t(locale, "daysLeftWeek")}
+          {weekBank.adjusted ? ` · ${t(locale, "weekAdjusted")}` : ""}
+        </p>
+      </article>
 
       <div className="grid gap-4 md:grid-cols-2">
         <article className="surface p-5">

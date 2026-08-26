@@ -13,6 +13,7 @@ import {
   Sparkles,
   Soup,
   UtensilsCrossed,
+  Moon,
 } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
@@ -20,6 +21,8 @@ import { useFarfurieStore } from "@/lib/store";
 const features = [
   { key: "featureProgram", text: "featureProgramText", icon: Gauge },
   { key: "featureNeutral", text: "featureNeutralText", icon: Sparkles },
+  { key: "featureWeekBank", text: "featureWeekBankText", icon: CalendarDays },
+  { key: "featureNoEatBack", text: "featureNoEatBackText", icon: Moon },
   { key: "featureFill", text: "featureFillText", icon: Sparkles },
   { key: "featurePot", text: "featurePotText", icon: Soup },
   { key: "featureMarket", text: "featureMarketText", icon: ShoppingBasket },

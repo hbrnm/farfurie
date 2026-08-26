@@ -2,33 +2,46 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { localISO, weekISODates, weekdayKeyFromISO } from "./dates";
+import { dayKcalFloor } from "./goals";
 import { analyzeMetabolism } from "./metabolism";
+import { effectiveDayGoals, weekBudget } from "./week-budget";
 import { useFarfurieStore, type DayKey, type MealKey } from "./store";
+
+export function useWeekBudget() {
+  const goals = useFarfurieStore((s) => s.goals);
+  const entries = useFarfurieStore((s) => s.entries);
+  const holidayMode = useFarfurieStore((s) => s.holidayMode);
+  const selectedDate = useFarfurieStore((s) => s.selectedDate);
+  const profile = useFarfurieStore((s) => s.profile);
+  return useMemo(
+    () =>
+      weekBudget({
+        baseKcal: goals.kcal,
+        entries,
+        date: selectedDate,
+        holiday: holidayMode,
+        floor: dayKcalFloor(profile),
+      }),
+    [goals.kcal, entries, selectedDate, holidayMode, profile],
+  );
+}
 
 export function useEffectiveGoals() {
   const goals = useFarfurieStore((s) => s.goals);
-  const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const recoveryUntil = useFarfurieStore((s) => s.recoveryUntil);
   const trainingDays = useFarfurieStore((s) => s.trainingDays);
   const selectedDate = useFarfurieStore((s) => s.selectedDate);
+  const week = useWeekBudget();
   return useMemo(() => {
     const recovery = !!recoveryUntil && localISO() <= recoveryUntil;
     const training = trainingDays.includes(weekdayKeyFromISO(selectedDate) as DayKey);
-    let kcal = holidayMode ? Math.round(goals.kcal * 1.15) : goals.kcal;
-    let carbs = holidayMode ? Math.round(goals.carbs * 1.15) : goals.carbs;
-    const fat = holidayMode ? Math.round(goals.fat * 1.15) : goals.fat;
-    if (training) {
-      kcal += 150;
-      carbs += 35;
-    }
-    return {
-      kcal,
-      protein: recovery ? Math.round(goals.protein * 1.1) : goals.protein,
-      carbs,
-      fat,
-      waterMl: goals.waterMl,
-    };
-  }, [goals, holidayMode, recoveryUntil, trainingDays, selectedDate]);
+    return effectiveDayGoals({
+      base: goals,
+      week,
+      training,
+      recovery,
+    });
+  }, [goals, recoveryUntil, trainingDays, selectedDate, week]);
 }
 
 export function useDayEntries(date?: string) {
@@ -74,16 +87,14 @@ export function useBurnedToday(date?: string) {
 export function useRemaining(date?: string) {
   const goals = useEffectiveGoals();
   const totals = useTotals(date);
-  const burned = useBurnedToday(date);
   return useMemo(() => {
-    const budget = goals.kcal + burned;
     return {
-      kcal: budget - totals.kcal,
+      kcal: goals.kcal - totals.kcal,
       protein: Math.round((goals.protein - totals.protein) * 10) / 10,
       carbs: Math.round((goals.carbs - totals.carbs) * 10) / 10,
       fat: Math.round((goals.fat - totals.fat) * 10) / 10,
     };
-  }, [goals, totals, burned]);
+  }, [goals, totals]);
 }
 
 export function useFastingStatus() {

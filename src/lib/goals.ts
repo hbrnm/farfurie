@@ -47,6 +47,11 @@ export function floorKcal(sex: Sex) {
   return sex === "male" ? 1500 : 1200;
 }
 
+/** Don't starve a day when the weekly bank is overspent. */
+export function dayKcalFloor(p: ProfileInput) {
+  return Math.max(floorKcal(p.sex), Math.round(calcBmr(p) * 1.1));
+}
+
 export function macrosForStyle(
   kcal: number,
   weightKg: number,

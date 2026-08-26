@@ -16,7 +16,11 @@ export function dayShareText(input: {
   const lines = [
     ro ? `Farfurie · ${input.date}` : `Farfurie · ${input.date}`,
     `${input.totals.kcal} / ${input.goalKcal} kcal` +
-      (input.burned ? (ro ? ` · arse ${input.burned}` : ` · burned ${input.burned}`) : ""),
+      (input.burned
+        ? ro
+          ? ` · mișcare ${input.burned} kcal (nu e în farfurie)`
+          : ` · movement ${input.burned} kcal (not on the plate)`
+        : ""),
     `P ${input.totals.protein}g · C ${input.totals.carbs}g · F ${input.totals.fat}g`,
     ro ? `Apă ${input.waterMl} ml` : `Water ${input.waterMl} ml`,
     "",

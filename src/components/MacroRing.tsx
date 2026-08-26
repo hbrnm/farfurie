@@ -8,6 +8,7 @@ import {
   useEffectiveGoals,
   useRemaining,
   useTotals,
+  useWeekBudget,
 } from "@/lib/selectors";
 
 export function MacroRing() {
@@ -18,10 +19,11 @@ export function MacroRing() {
   const remaining = useRemaining();
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const burned = useBurnedToday();
+  const week = useWeekBudget();
   const remainingLabel =
     selectedDate === localISO() ? t(locale, "remaining") : t(locale, "remainingDay");
 
-  const budget = goals.kcal + burned;
+  const budget = goals.kcal;
   const pct = Math.min(100, Math.round((totals.kcal / Math.max(budget, 1)) * 100));
   const radius = 54;
   const circ = 2 * Math.PI * radius;
@@ -83,9 +85,18 @@ export function MacroRing() {
             <div>
               <p className="text-sm text-ink-soft">
                 {t(locale, "loggedVsPlan")} · {totals.kcal} / {budget} kcal
-                {burned > 0 ? ` (+${burned} ${t(locale, "burned").toLowerCase()})` : ""}
                 {remaining.kcal < 0 ? ` · ${Math.abs(Math.round(remaining.kcal))} ${t(locale, "overPlan")}` : ""}
               </p>
+              <p className="mt-1 text-xs text-ink-soft">
+                {t(locale, "weekBank")} {week.weeklyEaten} / {week.weeklyTarget} · {week.daysLeft}{" "}
+                {t(locale, "daysLeftWeek")}
+                {week.adjusted ? ` · ${t(locale, "weekAdjusted")}` : ""}
+              </p>
+              {burned > 0 && (
+                <p className="mt-1 text-xs text-ink-soft">
+                  {t(locale, "burned")} {burned} kcal · {t(locale, "noEatBack")}
+                </p>
+              )}
               {holidayMode && (
                 <p className="mt-1 text-xs font-semibold text-[var(--danger)]">
                   {t(locale, "holidaysOn")}

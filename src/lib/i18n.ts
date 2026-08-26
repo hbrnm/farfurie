@@ -107,7 +107,8 @@ export const translations = {
     fastingNow: "În post",
     eatingNow: "Fereastră de mâncat",
     exercise: "Mișcare",
-    exerciseDesc: "Loghează activitatea — caloriile arse se văd în progres.",
+    exerciseDesc:
+      "Loghează plimbarea sau sala ca obicei. Nu adăugăm caloriile astea în farfurie — ceasul supraestimează.",
     minutes: "minute",
     logExercise: "Loghează",
     burned: "Arse azi",
@@ -330,6 +331,22 @@ export const translations = {
     featureNeutralText: "Ai mâncat mai mult? Algoritmul se uită la date, nu te ceartă.",
     trainingToday: "Zi de antrenament · +150 kcal",
     checkInBanner: "E momentul check-in-ului: țintele noi din metabolismul tău.",
+    noEatBack: "Antrenamentul nu umflă farfuria",
+    weekBank: "Bugetul săptămânii",
+    weekAdjusted: "Azi e ajustat după ce-ai mâncat în săptămâna asta",
+    daysLeftWeek: "zile rămase",
+    habitSleep: "Somn ok",
+    habitEnergy: "Energie",
+    energyLow: "Scăzută",
+    energyOk: "Ok",
+    energyHigh: "Bună",
+    habitsTitle: "Obiceiuri",
+    featureWeekBank: "Buget pe 7 zile",
+    featureWeekBankText:
+      "Weekend mai generos? Zilele rămase se strâng automat, fără să cazi la 1200.",
+    featureNoEatBack: "Fără eat-back de la ceas",
+    featureNoEatBackText:
+      "Mișcarea se loghează. Caloriile din inel nu se adaugă la prânz.",
   },
   en: {
     brand: "Farfurie",
@@ -437,7 +454,8 @@ export const translations = {
     fastingNow: "Fasting",
     eatingNow: "Eating window",
     exercise: "Movement",
-    exerciseDesc: "Log activity — burned calories show in progress.",
+    exerciseDesc:
+      "Log a walk or a gym session as a habit. We do not add those calories to the plate — watches overestimate.",
     minutes: "minutes",
     logExercise: "Log",
     burned: "Burned today",
@@ -660,6 +678,22 @@ export const translations = {
     featureNeutralText: "Ate more? The algorithm looks at the data — it does not scold you.",
     trainingToday: "Training day · +150 kcal",
     checkInBanner: "Check-in time: new targets from your metabolism.",
+    noEatBack: "Training does not inflate the plate",
+    weekBank: "Weekly budget",
+    weekAdjusted: "Today is adjusted from what you already ate this week",
+    daysLeftWeek: "days left",
+    habitSleep: "Sleep ok",
+    habitEnergy: "Energy",
+    energyLow: "Low",
+    energyOk: "Ok",
+    energyHigh: "Good",
+    habitsTitle: "Habits",
+    featureWeekBank: "7-day budget",
+    featureWeekBankText:
+      "A bigger weekend? The remaining days tighten automatically, without dropping to 1200.",
+    featureNoEatBack: "No watch eat-back",
+    featureNoEatBackText:
+      "Movement is logged. Ring calories are not added to lunch.",
   },
 } as const;
 

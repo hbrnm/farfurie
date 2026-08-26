@@ -15,11 +15,13 @@ import {
   calcTdee,
   defaultProfile,
   macrosForStyle,
+  dayKcalFloor,
   type DietStyle,
   type ProfileInput,
   type ProgramMode,
 } from "./goals";
 import { analyzeMetabolism } from "./metabolism";
+import { effectiveDayGoals, weekBudget } from "./week-budget";
 import { exercises, type FastingProtocol, fastingProtocols } from "./activity";
 import {
   localISO,
@@ -64,6 +66,11 @@ export type BodyLog = {
   waistCm?: number;
   hipCm?: number;
   chestCm?: number;
+};
+
+export type DayHabits = {
+  sleep: boolean;
+  energy: 0 | 1 | 2 | 3;
 };
 
 export type ThemeName = "light" | "dark";
@@ -135,6 +142,7 @@ type State = {
   lastExpenditure: number | null;
   measurements: BodyLog[];
   userRecipes: Recipe[];
+  habitsByDate: Record<string, DayHabits>;
   setLocale: (locale: Locale) => void;
   toggleHoliday: () => void;
   setSelectedDate: (date: string) => void;
@@ -202,6 +210,9 @@ type State = {
   copyDayToDate: (targetDate: string) => number;
   logMeasurement: (row: Omit<BodyLog, "date"> & { date?: string }) => void;
   addUserRecipe: (recipe: Recipe) => void;
+  toggleSleep: (date?: string) => void;
+  setEnergy: (level: 0 | 1 | 2 | 3, date?: string) => void;
+  habitsFor: (date: string) => DayHabits;
   exportSnapshot: () => FarfurieSnapshot;
   importSnapshot: (snapshot: FarfurieSnapshot) => void;
   fastingStatus: () => {
@@ -369,6 +380,7 @@ export const useFarfurieStore = create<State>()(
       lastExpenditure: null,
       measurements: [],
       userRecipes: [],
+      habitsByDate: {},
       profile: { ...defaultProfile, goal: "lose" },
       goals: goalsFromProfile({ ...defaultProfile, goal: "lose" }),
       favoriteRecipeIds: ["ovaz-napolact", "salata-ton"],
@@ -694,6 +706,31 @@ export const useFarfurieStore = create<State>()(
       },
       addUserRecipe: (recipe) =>
         set((s) => ({ userRecipes: [recipe, ...s.userRecipes].slice(0, 40) })),
+      toggleSleep: (date) => {
+        const day = date ?? get().selectedDate;
+        set((s) => {
+          const current = s.habitsByDate[day] ?? { sleep: false, energy: 0 as const };
+          return {
+            habitsByDate: {
+              ...s.habitsByDate,
+              [day]: { ...current, sleep: !current.sleep },
+            },
+          };
+        });
+      },
+      setEnergy: (level, date) => {
+        const day = date ?? get().selectedDate;
+        set((s) => {
+          const current = s.habitsByDate[day] ?? { sleep: false, energy: 0 as const };
+          return {
+            habitsByDate: {
+              ...s.habitsByDate,
+              [day]: { ...current, energy: current.energy === level ? 0 : level },
+            },
+          };
+        });
+      },
+      habitsFor: (date) => get().habitsByDate[date] ?? { sleep: false, energy: 0 },
       exportSnapshot: () => {
         const s = get();
         return {
@@ -728,6 +765,7 @@ export const useFarfurieStore = create<State>()(
           lastExpenditure: s.lastExpenditure,
           measurements: s.measurements,
           userRecipes: s.userRecipes,
+          habitsByDate: s.habitsByDate,
         };
       },
       importSnapshot: (snapshot) => {
@@ -761,6 +799,7 @@ export const useFarfurieStore = create<State>()(
           lastExpenditure: snapshot.lastExpenditure ?? null,
           measurements: snapshot.measurements ?? [],
           userRecipes: snapshot.userRecipes ?? [],
+          habitsByDate: snapshot.habitsByDate ?? {},
           lastAddedId: null,
           selectedDate: localISO(),
         });
@@ -865,26 +904,20 @@ export const useFarfurieStore = create<State>()(
         })),
       baseGoals: () => get().goals,
       effectiveGoals: () => {
-        const base = get().goals;
-        const recovery = get().isRecovery();
-        const holiday = get().holidayMode;
-        const training = get().trainingDays.includes(
-          weekdayKeyFromISO(get().selectedDate) as DayKey,
-        );
-        let kcal = holiday ? Math.round(base.kcal * 1.15) : base.kcal;
-        let carbs = holiday ? Math.round(base.carbs * 1.15) : base.carbs;
-        const fat = holiday ? Math.round(base.fat * 1.15) : base.fat;
-        if (training) {
-          kcal += 150;
-          carbs += 35;
-        }
-        return {
-          kcal,
-          protein: recovery ? Math.round(base.protein * 1.1) : base.protein,
-          carbs,
-          fat,
-          waterMl: base.waterMl,
-        };
+        const s = get();
+        const week = weekBudget({
+          baseKcal: s.goals.kcal,
+          entries: s.entries,
+          date: s.selectedDate,
+          holiday: s.holidayMode,
+          floor: dayKcalFloor(s.profile),
+        });
+        return effectiveDayGoals({
+          base: s.goals,
+          week,
+          training: s.trainingDays.includes(weekdayKeyFromISO(s.selectedDate) as DayKey),
+          recovery: s.isRecovery(),
+        });
       },
       totalsFor: (date) =>
         sumEntries(get().entries.filter((e) => e.date === date)),
@@ -892,10 +925,8 @@ export const useFarfurieStore = create<State>()(
       remaining: () => {
         const goals = get().effectiveGoals();
         const totals = get().totals();
-        const burned = get().burnedToday();
-        const budget = goals.kcal + burned;
         return {
-          kcal: budget - totals.kcal,
+          kcal: goals.kcal - totals.kcal,
           protein: Math.round((goals.protein - totals.protein) * 10) / 10,
           carbs: Math.round((goals.carbs - totals.carbs) * 10) / 10,
           fat: Math.round((goals.fat - totals.fat) * 10) / 10,
@@ -968,7 +999,7 @@ export const useFarfurieStore = create<State>()(
     }),
     {
       name: "farfurie-demo-v4",
-      version: 8,
+      version: 9,
       skipHydration: true,
       migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
@@ -1020,6 +1051,10 @@ export const useFarfurieStore = create<State>()(
           lastExpenditure: typeof s.lastExpenditure === "number" ? s.lastExpenditure : null,
           measurements: Array.isArray(s.measurements) ? s.measurements : [],
           userRecipes: Array.isArray(s.userRecipes) ? s.userRecipes : [],
+          habitsByDate:
+            s.habitsByDate && typeof s.habitsByDate === "object"
+              ? s.habitsByDate
+              : {},
         } as never;
       },
       onRehydrateStorage: () => () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Droplets, Flame, Timer } from "lucide-react";
+import { Droplets, Flame, Moon, Timer, Zap } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { foods } from "@/lib/foods";
 import { useEffectiveGoals, useFastingStatus, useTotals } from "@/lib/selectors";
@@ -19,6 +19,9 @@ export function SideStats() {
   const waterMl = useFarfurieStore((s) => s.waterForSelected());
   const streak = useFarfurieStore((s) => s.currentStreak());
   const addWater = useFarfurieStore((s) => s.addWater);
+  const toggleSleep = useFarfurieStore((s) => s.toggleSleep);
+  const setEnergy = useFarfurieStore((s) => s.setEnergy);
+  const habitsByDate = useFarfurieStore((s) => s.habitsByDate);
   const goals = useEffectiveGoals();
   const totals = useTotals();
   const selectedDate = useFarfurieStore((s) => s.selectedDate);
@@ -46,6 +49,51 @@ export function SideStats() {
         <button type="button" className="btn btn-ghost mt-4 w-full text-sm" onClick={addWater}>
           {t(locale, "logWater")}
         </button>
+      </section>
+
+      <section className="surface p-5">
+        <div className="mb-3 flex items-center gap-2 text-brand">
+          <Moon size={18} />
+          <h3 className="font-semibold">{t(locale, "habitsTitle")}</h3>
+        </div>
+        <button
+          type="button"
+          className={`mb-3 w-full rounded-2xl border px-3 py-2 text-sm font-semibold ${
+            (habitsByDate[selectedDate]?.sleep ?? false)
+              ? "border-brand/40 bg-brand/10 text-brand"
+              : "border-[var(--line)] bg-white/80"
+          }`}
+          onClick={() => toggleSleep()}
+        >
+          {t(locale, "habitSleep")}
+          {(habitsByDate[selectedDate]?.sleep ?? false) ? " ✓" : ""}
+        </button>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          {t(locale, "habitEnergy")}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              [1, "energyLow"],
+              [2, "energyOk"],
+              [3, "energyHigh"],
+            ] as const
+          ).map(([level, key]) => (
+            <button
+              key={level}
+              type="button"
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                (habitsByDate[selectedDate]?.energy ?? 0) === level
+                  ? "bg-brand text-white"
+                  : "border border-[var(--line)] bg-white/80"
+              }`}
+              onClick={() => setEnergy(level)}
+            >
+              <Zap size={12} />
+              {t(locale, key)}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="surface p-5">

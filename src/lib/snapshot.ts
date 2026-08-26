@@ -85,6 +85,7 @@ export type FarfurieSnapshot = {
     stepsEn: string[];
     imageHue: number;
   }>;
+  habitsByDate?: Record<string, { sleep: boolean; energy: 0 | 1 | 2 | 3 }>;
 };
 
 export function isSnapshot(value: unknown): value is FarfurieSnapshot {
