@@ -122,6 +122,7 @@ export function ProfileBoard() {
           value={targetWeightKg}
           onChange={setTargetWeight}
         />
+        <MeasurementsBlock />
         <div className="md:col-span-2">
           <h2 className="display text-2xl">{t(locale, "recovery")}</h2>
           <p className="mt-1 text-sm text-ink-soft">
@@ -319,6 +320,10 @@ export function ProfileBoard() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2">
+        <Link href="/app/program" className="surface block p-5 transition hover:-translate-y-0.5">
+          <p className="display text-xl">{t(locale, "navProgram")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "programDesc")}</p>
+        </Link>
         <Link href="/app/account" className="surface block p-5 transition hover:-translate-y-0.5">
           <p className="display text-xl">{t(locale, "navAccount")}</p>
           <p className="mt-1 text-sm text-ink-soft">{t(locale, "accountDesc")}</p>
@@ -437,7 +442,54 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
         {label}
       </p>
-      <p className="display text-2xl text-brand">{value}</p>
+      <p className="display text-2xl">{value}</p>
     </div>
   );
 }
+
+function MeasurementsBlock() {
+  const locale = useFarfurieStore((s) => s.locale);
+  const logMeasurement = useFarfurieStore((s) => s.logMeasurement);
+  const measurements = useFarfurieStore((s) => s.measurements);
+  const [waist, setWaist] = useState(70);
+  const [hip, setHip] = useState(95);
+  const latest = measurements[measurements.length - 1];
+  return (
+    <div className="md:col-span-2">
+      <h2 className="display text-2xl">{t(locale, "measurements")}</h2>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <label className="text-xs font-semibold text-ink-soft">
+          {t(locale, "waist")}
+          <input
+            type="number"
+            value={waist}
+            onChange={(e) => setWaist(Number(e.target.value))}
+            className="mt-1 w-24 rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-xs font-semibold text-ink-soft">
+          {t(locale, "hip")}
+          <input
+            type="number"
+            value={hip}
+            onChange={(e) => setHip(Number(e.target.value))}
+            className="mt-1 w-24 rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm"
+          />
+        </label>
+        <button
+          type="button"
+          className="btn btn-primary self-end text-sm"
+          onClick={() => logMeasurement({ waistCm: waist, hipCm: hip })}
+        >
+          {t(locale, "add")}
+        </button>
+      </div>
+      {latest && (
+        <p className="mt-2 text-xs text-ink-soft">
+          {latest.date}: {t(locale, "waist")} {latest.waistCm ?? "—"} · {t(locale, "hip")} {latest.hipCm ?? "—"}
+        </p>
+      )}
+    </div>
+  );
+}
+

@@ -1,16 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { isWeekendISO, lastNDates, localISO, weekISODates } from "@/lib/dates";
 import { foods } from "@/lib/foods";
 import { nutritionistCsv } from "@/lib/share";
-import {
-  useBurnedToday,
-  useCurrentStreak,
-  useEffectiveGoals,
-  useTotals,
-  useWeekKcal,
-} from "@/lib/selectors";
+import { useBurnedToday, useCurrentStreak, useEffectiveGoals, useMetabolism, useTotals, useWeekKcal } from "@/lib/selectors";
 import { useFarfurieStore } from "@/lib/store";
 
 const DRINK_IDS = new Set(foods.filter((f) => f.category === "drink").map((f) => f.id));
@@ -32,6 +27,7 @@ export function InsightsPanel() {
   const weightLogs = useFarfurieStore((s) => s.weightLogs);
   const targetWeightKg = useFarfurieStore((s) => s.targetWeightKg);
   const recovery = useFarfurieStore((s) => s.isRecovery());
+  const report = useMetabolism();
   const startRecovery = useFarfurieStore((s) => s.startRecovery);
   const stopRecovery = useFarfurieStore((s) => s.stopRecovery);
   const exercises = useFarfurieStore((s) => s.exerciseLogs);
@@ -91,6 +87,20 @@ export function InsightsPanel() {
             : "A clear view of today — without the noise."}
         </p>
       </header>
+
+      <Link href="/app/program" className="surface block p-5 transition hover:-translate-y-0.5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          {t(locale, "expenditure")}
+        </p>
+        <p className="display mt-1 text-3xl text-brand">
+          {report.expenditure ?? report.formulaTdee} kcal
+        </p>
+        <p className="mt-1 text-sm text-ink-soft">
+          {report.expenditureSource === "data" ? t(locale, "fromData") : t(locale, "fromFormula")}
+          {report.trendNow != null ? ` · ${t(locale, "trendWeight")} ${report.trendNow.toFixed(1)} kg` : ""}
+          {report.etaWeeks != null ? ` · ETA ${report.etaWeeks} ${t(locale, "weeksToGoal")}` : ""}
+        </p>
+      </Link>
 
       <div className="grid gap-4 md:grid-cols-3">
         <article className="surface p-5">

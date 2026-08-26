@@ -64,6 +64,27 @@ export type FarfurieSnapshot = {
   recoveryUntil: string | null;
   targetWeightKg: number;
   catalogFoods: Food[];
+  programMode?: "coached" | "manual";
+  dietStyle?: "balanced" | "highProtein" | "lowCarb" | "keto";
+  weeklyRatePct?: number;
+  trainingDays?: Array<"mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun">;
+  lastCheckInAt?: string | null;
+  lastExpenditure?: number | null;
+  measurements?: Array<{ date: string; waistCm?: number; hipCm?: number; chestCm?: number }>;
+  userRecipes?: Array<{
+    id: string;
+    nameRo: string;
+    nameEn: string;
+    minutes: number;
+    servings: number;
+    tags: string[];
+    perServing: Macros;
+    ingredientsRo: string[];
+    ingredientsEn: string[];
+    stepsRo: string[];
+    stepsEn: string[];
+    imageHue: number;
+  }>;
 };
 
 export function isSnapshot(value: unknown): value is FarfurieSnapshot {

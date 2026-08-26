@@ -6,6 +6,7 @@ import {
   BookOpen,
   Camera,
   Cloud,
+  Gauge,
   ScanBarcode,
   ShoppingBasket,
   Soup,
@@ -19,6 +20,7 @@ import { useFarfurieStore } from "@/lib/store";
 
 const items = [
   { href: "/app/scan", key: "navScan" as const, desc: "moreScan" as const, icon: ScanBarcode },
+  { href: "/app/program", key: "navProgram" as const, desc: "programDesc" as const, icon: Gauge },
   { href: "/app/plate", key: "navPlate" as const, desc: "platePhotoDesc" as const, icon: Camera },
   { href: "/app/account", key: "navAccount" as const, desc: "accountDesc" as const, icon: Cloud },
   { href: "/app/coach", key: "navCoach" as const, desc: "moreCoach" as const, icon: Sparkles },

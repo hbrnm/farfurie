@@ -6,6 +6,8 @@ export type ActivityLevel =
   | "active"
   | "athlete";
 export type GoalType = "lose" | "maintain" | "gain";
+export type DietStyle = "balanced" | "highProtein" | "lowCarb" | "keto";
+export type ProgramMode = "coached" | "manual";
 
 export type ProfileInput = {
   sex: Sex;
@@ -41,18 +43,45 @@ export function calcCalorieGoal(p: ProfileInput): number {
   return tdee;
 }
 
-export function calcMacroGoals(kcal: number, weightKg: number) {
+export function floorKcal(sex: Sex) {
+  return sex === "male" ? 1500 : 1200;
+}
+
+export function macrosForStyle(
+  kcal: number,
+  weightKg: number,
+  style: DietStyle = "balanced",
+) {
+  const waterMl = Math.round(weightKg * 35);
+  if (style === "highProtein") {
+    const protein = Math.round(weightKg * 2.2);
+    const fat = Math.round((kcal * 0.25) / 9);
+    const carbs = Math.max(70, Math.round((kcal - protein * 4 - fat * 9) / 4));
+    return { kcal, protein, carbs, fat, waterMl };
+  }
+  if (style === "lowCarb") {
+    const protein = Math.round(weightKg * 2);
+    const fat = Math.round((kcal * 0.4) / 9);
+    const carbs = Math.max(50, Math.round((kcal - protein * 4 - fat * 9) / 4));
+    return { kcal, protein, carbs, fat, waterMl };
+  }
+  if (style === "keto") {
+    const protein = Math.round(weightKg * 1.8);
+    const carbs = 30;
+    const fat = Math.max(40, Math.round((kcal - protein * 4 - carbs * 4) / 9));
+    return { kcal, protein, carbs, fat, waterMl };
+  }
   const protein = Math.round(weightKg * 1.8);
   const fat = Math.round((kcal * 0.28) / 9);
-  const carbs = Math.round((kcal - protein * 4 - fat * 9) / 4);
-  return {
-    kcal,
-    protein,
-    carbs: Math.max(carbs, 80),
-    fat,
-    waterMl: Math.round(weightKg * 35),
-  };
+  const carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
+  return { kcal, protein, carbs, fat, waterMl };
 }
+
+export function calcMacroGoals(kcal: number, weightKg: number) {
+  return macrosForStyle(kcal, weightKg, "balanced");
+}
+
+export const WEEKLY_RATE_OPTIONS = [0.25, 0.5, 0.75, 1] as const;
 
 export const defaultProfile: ProfileInput = {
   sex: "female",

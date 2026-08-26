@@ -12,6 +12,7 @@ export function DateSwitcher() {
   const shiftSelectedDate = useFarfurieStore((s) => s.shiftSelectedDate);
   const goToToday = useFarfurieStore((s) => s.goToToday);
   const copyPreviousDay = useFarfurieStore((s) => s.copyPreviousDay);
+  const copyDayToDate = useFarfurieStore((s) => s.copyDayToDate);
   const previousDayHasMeals = useFarfurieStore((s) => s.previousDayHasMeals());
   const isToday = selectedDate === localISO();
   const canGoForward = selectedDate < shiftISO(localISO(), 7);
@@ -76,6 +77,20 @@ export function DateSwitcher() {
       >
         <Copy size={14} />
         {copied ? t(locale, "copiedMeals") : t(locale, "copyPrevDay")}
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost !px-3 !py-2 text-sm"
+        onClick={() => {
+          const n = copyDayToDate(shiftISO(selectedDate, 1));
+          if (n > 0) {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 2000);
+          }
+        }}
+      >
+        <Copy size={14} />
+        {t(locale, "copyDayTomorrow")}
       </button>
     </div>
   );

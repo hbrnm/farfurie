@@ -28,6 +28,7 @@ const links = [
 
 const moreLinks = [
   { href: "/app/scan", key: "navScan" as const },
+  { href: "/app/program", key: "navProgram" as const },
   { href: "/app/plate", key: "navPlate" as const },
   { href: "/app/coach", key: "navCoach" as const },
   { href: "/app/builder", key: "navBuilder" as const },

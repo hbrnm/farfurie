@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ScanBarcode, X } from "lucide-react";
+import { Mic, ScanBarcode, X } from "lucide-react";
 import {
   foodName,
   foodUnit,
@@ -28,6 +28,7 @@ export function AddFoodSheet({
   const locale = useFarfurieStore((s) => s.locale);
   const addFoodToMeal = useFarfurieStore((s) => s.addFoodToMeal);
   const addCustomFood = useFarfurieStore((s) => s.addCustomFood);
+  const quickAdd = useFarfurieStore((s) => s.quickAdd);
   const addEntry = useFarfurieStore((s) => s.addEntry);
   const favoriteFoodIds = useFarfurieStore((s) => s.favoriteFoodIds);
   const toggleFavoriteFood = useFarfurieStore((s) => s.toggleFavoriteFood);
@@ -138,23 +139,66 @@ export function AddFoodSheet({
           </Link>
         </p>
 
-        <input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            const digits = e.target.value.replace(/\D/g, "");
-            if (digits.length >= 8 && digits.length <= 14) {
-              void lookupBarcodeLive(digits).then((food) => {
-                if (!food) return;
-                addCatalogFood(food);
-                setPicked(food);
-                setGrams(food.defaultGrams);
-              });
-            }
-          }}
-          placeholder={t(locale, "searchFood")}
-          className="mb-4 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none ring-brand focus:ring-2"
-        />
+        <label className="mb-3 flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-white px-3 py-2">
+          <ScanBarcode size={16} className="text-brand" />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              const digits = e.target.value.replace(/\D/g, "");
+              if (digits.length >= 8 && digits.length <= 14) {
+                void lookupBarcodeLive(digits).then((food) => {
+                  if (!food) return;
+                  addCatalogFood(food);
+                  setPicked(food);
+                  setGrams(food.defaultGrams);
+                });
+              }
+            }}
+            placeholder={t(locale, "searchFood")}
+            className="w-full bg-transparent text-sm outline-none"
+          />
+          <button
+            type="button"
+            className="rounded-full p-1.5 text-brand hover:bg-brand/10"
+            title={t(locale, "speakFood")}
+            onClick={() => {
+              const Ctor = (
+                window as unknown as {
+                  SpeechRecognition?: new () => {
+                    lang: string;
+                    onresult: ((ev: { results: Array<Array<{ transcript: string }>> }) => void) | null;
+                    start: () => void;
+                  };
+                  webkitSpeechRecognition?: new () => {
+                    lang: string;
+                    onresult: ((ev: { results: Array<Array<{ transcript: string }>> }) => void) | null;
+                    start: () => void;
+                  };
+                }
+              ).SpeechRecognition ??
+                (
+                  window as unknown as {
+                    webkitSpeechRecognition?: new () => {
+                      lang: string;
+                      onresult: ((ev: { results: Array<Array<{ transcript: string }>> }) => void) | null;
+                      start: () => void;
+                    };
+                  }
+                ).webkitSpeechRecognition;
+              if (!Ctor) return;
+              const rec = new Ctor();
+              rec.lang = locale === "ro" ? "ro-RO" : "en-US";
+              rec.onresult = (ev) => {
+                const said = ev.results?.[0]?.[0]?.transcript ?? "";
+                if (said) setQuery(said);
+              };
+              rec.start();
+            }}
+          >
+            <Mic size={16} />
+          </button>
+        </label>
 
         {query.trim() === "" && (
           <>
@@ -338,18 +382,20 @@ export function AddFoodSheet({
           className="mt-5 space-y-3 rounded-2xl border border-dashed border-[var(--line)] bg-white/60 p-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!customName.trim() || customKcal <= 0) return;
-            addCustomFood(meal, customName, {
+            if (customKcal <= 0) return;
+            const macros = {
               kcal: customKcal,
               protein: customProtein,
               carbs: customCarbs,
               fat: customFat,
-            });
+            };
+            if (customName.trim()) addCustomFood(meal, customName, macros);
+            else quickAdd(meal, macros);
             onClose();
           }}
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-            {t(locale, "customFood")}
+            {t(locale, "quickAdd")}
           </p>
           <input
             value={customName}

@@ -78,6 +78,19 @@ export function coachReply(input: {
     };
   }
 
+  if (remaining.kcal < -80) {
+    return {
+      title: ro ? "Fără vinovăție" : "No guilt",
+      body: ro
+        ? `Ai logat ${Math.round(eaten.kcal)} kcal. Check-in-ul folosește ce-ai mâncat realmente, nu cât de aproape ai fost de ${goalKcal}. Continuă să loghezi tot — inclusiv desertul — ca metabolismul să fie corect.`
+        : `You logged ${Math.round(eaten.kcal)} kcal. Check-in uses what you actually ate, not how close you were to ${goalKcal}. Keep logging everything — including dessert — so expenditure stays honest.`,
+      tips: [
+        ro ? "Nu tăia mâine 1000 kcal. Așteaptă check-in-ul." : "Don’t slash 1000 kcal tomorrow. Wait for check-in.",
+        ro ? "Cântărește-te dimineața, același cântar." : "Weigh in the morning, same scale.",
+      ],
+    };
+  }
+
   if (remaining.kcal < 80 && eaten.kcal > goalKcal * 0.9) {
     return {
       title: ro ? "Zi închisă bine" : "Day closed well",

@@ -6,7 +6,7 @@ import { useShallow } from "zustand/react/shallow";
 import type { Locale } from "./i18n";
 import type { Macros } from "./foods";
 import { macrosForGrams, resolveFood, type Food } from "./foods";
-import { recipes } from "./recipes";
+import { recipes, type Recipe } from "./recipes";
 import type { FarfurieSnapshot } from "./snapshot";
 import {
   calcBmr,
@@ -14,8 +14,12 @@ import {
   calcMacroGoals,
   calcTdee,
   defaultProfile,
+  macrosForStyle,
+  type DietStyle,
   type ProfileInput,
+  type ProgramMode,
 } from "./goals";
+import { analyzeMetabolism } from "./metabolism";
 import { exercises, type FastingProtocol, fastingProtocols } from "./activity";
 import {
   localISO,
@@ -53,6 +57,13 @@ export type SavedMeal = {
     macros: Macros;
     meal: MealKey;
   }>;
+};
+
+export type BodyLog = {
+  date: string;
+  waistCm?: number;
+  hipCm?: number;
+  chestCm?: number;
 };
 
 export type ThemeName = "light" | "dark";
@@ -116,6 +127,14 @@ type State = {
   lastAddedId: string | null;
   targetWeightKg: number;
   catalogFoods: Food[];
+  programMode: ProgramMode;
+  dietStyle: DietStyle;
+  weeklyRatePct: number;
+  trainingDays: DayKey[];
+  lastCheckInAt: string | null;
+  lastExpenditure: number | null;
+  measurements: BodyLog[];
+  userRecipes: Recipe[];
   setLocale: (locale: Locale) => void;
   toggleHoliday: () => void;
   setSelectedDate: (date: string) => void;
@@ -174,6 +193,15 @@ type State = {
     items: SavedMeal["items"],
   ) => void;
   addCatalogFood: (food: Food) => void;
+  setProgramMode: (mode: ProgramMode) => void;
+  setDietStyle: (style: DietStyle) => void;
+  setWeeklyRatePct: (pct: number) => void;
+  toggleTrainingDay: (day: DayKey) => void;
+  applyWeeklyCheckIn: () => boolean;
+  quickAdd: (meal: MealKey, macros: Macros) => void;
+  copyDayToDate: (targetDate: string) => number;
+  logMeasurement: (row: Omit<BodyLog, "date"> & { date?: string }) => void;
+  addUserRecipe: (recipe: Recipe) => void;
   exportSnapshot: () => FarfurieSnapshot;
   importSnapshot: (snapshot: FarfurieSnapshot) => void;
   fastingStatus: () => {
@@ -214,6 +242,76 @@ function emptyMacros(): Macros {
   return { kcal: 0, protein: 0, carbs: 0, fat: 0 };
 }
 
+function buildDemoHistory() {
+  const lunches: Array<{ nameRo: string; nameEn: string; macros: Macros }> = [
+    {
+      nameRo: "Pui Pilos cu orez",
+      nameEn: "Pilos chicken with rice",
+      macros: { kcal: 520, protein: 42, carbs: 48, fat: 14 },
+    },
+    {
+      nameRo: "Sarmale + mămăligă",
+      nameEn: "Cabbage rolls + polenta",
+      macros: { kcal: 610, protein: 28, carbs: 54, fat: 28 },
+    },
+    {
+      nameRo: "Salată cu ton Scandia",
+      nameEn: "Scandia tuna salad",
+      macros: { kcal: 380, protein: 36, carbs: 18, fat: 16 },
+    },
+  ];
+  const weightLogs: WeightLog[] = [];
+  const entries: DiaryEntry[] = [];
+  for (let i = 13; i >= 1; i -= 1) {
+    const date = shiftISO(TODAY, -i);
+    const noise = ((i * 13) % 5) * 0.08 - 0.16;
+    weightLogs.push({
+      date,
+      kg: Math.round((69.3 - (13 - i) * 0.09 + noise) * 10) / 10,
+    });
+    const lunch = lunches[i % lunches.length];
+    const jitter = ((i * 7) % 4) * 25;
+    entries.push(
+      {
+        id: `seed-${date}-b`,
+        date,
+        meal: "breakfast",
+        nameRo: "Ovăz cu iaurt Napolact",
+        nameEn: "Oats with Napolact yogurt",
+        macros: { kcal: 340 + jitter, protein: 14, carbs: 52, fat: 9 },
+        createdAt: `${date}T07:30:00.000Z`,
+      },
+      {
+        id: `seed-${date}-l`,
+        date,
+        meal: "lunch",
+        nameRo: lunch.nameRo,
+        nameEn: lunch.nameEn,
+        macros: {
+          kcal: lunch.macros.kcal + jitter,
+          protein: lunch.macros.protein,
+          carbs: lunch.macros.carbs,
+          fat: lunch.macros.fat,
+        },
+        createdAt: `${date}T13:00:00.000Z`,
+      },
+      {
+        id: `seed-${date}-d`,
+        date,
+        meal: "dinner",
+        nameRo: "Ciorbă de legume + pâine",
+        nameEn: "Vegetable soup + bread",
+        macros: { kcal: 430, protein: 14, carbs: 58, fat: 12 },
+        createdAt: `${date}T19:00:00.000Z`,
+      },
+    );
+  }
+  weightLogs.push({ date: TODAY, kg: 68 });
+  return { weightLogs, entries };
+}
+
+const DEMO = buildDemoHistory();
+
 function sumEntries(entries: DiaryEntry[]): Macros {
   return entries.reduce(
     (acc, e) => ({
@@ -237,11 +335,7 @@ export const useFarfurieStore = create<State>()(
       weekPlan: emptyWeekPlan(),
       theme: "light",
       dayNotes: {},
-      weightLogs: [
-        { date: shiftISO(TODAY, -14), kg: 69.4 },
-        { date: shiftISO(TODAY, -7), kg: 68.8 },
-        { date: TODAY, kg: 68 },
-      ],
+      weightLogs: DEMO.weightLogs,
       savedMeals: [
         {
           id: "saved-birou",
@@ -267,8 +361,16 @@ export const useFarfurieStore = create<State>()(
       lastAddedId: null,
       targetWeightKg: 64,
       catalogFoods: [],
-      profile: defaultProfile,
-      goals: INITIAL_GOALS,
+      programMode: "coached",
+      dietStyle: "balanced",
+      weeklyRatePct: 0.5,
+      trainingDays: ["mon", "tue", "thu"],
+      lastCheckInAt: null,
+      lastExpenditure: null,
+      measurements: [],
+      userRecipes: [],
+      profile: { ...defaultProfile, goal: "lose" },
+      goals: goalsFromProfile({ ...defaultProfile, goal: "lose" }),
       favoriteRecipeIds: ["ovaz-napolact", "salata-ton"],
       favoriteFoodIds: ["ton-scandia", "iaurt-napolact"],
       shopping: [
@@ -291,15 +393,7 @@ export const useFarfurieStore = create<State>()(
       fastingStartedAt: null,
       exerciseLogs: [],
       entries: [
-        {
-          id: "seed-y1",
-          date: YESTERDAY,
-          meal: "dinner",
-          nameRo: "Sarmale light",
-          nameEn: "Light cabbage rolls",
-          macros: { kcal: 420, protein: 28, carbs: 32, fat: 18 },
-          createdAt: new Date().toISOString(),
-        },
+        ...DEMO.entries,
         {
           id: "seed-1",
           date: TODAY,
@@ -372,7 +466,8 @@ export const useFarfurieStore = create<State>()(
         });
       },
       addRecipeToMeal: (recipeId, meal) => {
-        const recipe = recipes.find((r) => r.id === recipeId);
+        const recipe =
+          recipes.find((r) => r.id === recipeId) ?? get().userRecipes.find((r) => r.id === recipeId);
         if (!recipe) return;
         get().addEntry({
           meal,
@@ -521,6 +616,84 @@ export const useFarfurieStore = create<State>()(
             ...s.catalogFoods.filter((f) => f.id !== food.id && f.ean !== food.ean),
           ].slice(0, 200),
         })),
+      setProgramMode: (mode) => set({ programMode: mode }),
+      setDietStyle: (style) =>
+        set((s) => ({
+          dietStyle: style,
+          goals: macrosForStyle(s.goals.kcal, s.profile.weightKg, style),
+        })),
+      setWeeklyRatePct: (pct) => set({ weeklyRatePct: Math.min(1, Math.max(0.25, pct)) }),
+      toggleTrainingDay: (day) =>
+        set((s) => ({
+          trainingDays: s.trainingDays.includes(day)
+            ? s.trainingDays.filter((d) => d !== day)
+            : [...s.trainingDays, day],
+        })),
+      applyWeeklyCheckIn: () => {
+        const s = get();
+        const report = analyzeMetabolism({
+          profile: s.profile,
+          entries: s.entries,
+          weightLogs: s.weightLogs,
+          targetWeightKg: s.targetWeightKg,
+          dietStyle: s.dietStyle,
+          weeklyRatePct: s.weeklyRatePct,
+          today: localISO(),
+        });
+        set({
+          goals: report.suggested,
+          lastCheckInAt: localISO(),
+          lastExpenditure: report.expenditure ?? report.formulaTdee,
+          profile:
+            report.trendNow != null
+              ? { ...s.profile, weightKg: Math.round(report.trendNow * 10) / 10 }
+              : s.profile,
+        });
+        return report.ready;
+      },
+      quickAdd: (meal, macros) => {
+        if (macros.kcal <= 0) return;
+        const ro = get().locale === "ro";
+        get().addEntry({
+          meal,
+          nameRo: ro ? "Adaugă rapid" : "Quick add",
+          nameEn: "Quick add",
+          macros,
+        });
+      },
+      copyDayToDate: (targetDate) => {
+        if (targetDate > shiftISO(localISO(), 7)) return 0;
+        const source = get().selectedDate;
+        const items = get().entries.filter((e) => e.date === source);
+        items.forEach((e) =>
+          get().addEntry({
+            date: targetDate,
+            meal: e.meal,
+            nameRo: e.nameRo,
+            nameEn: e.nameEn,
+            macros: e.macros,
+            grams: e.grams,
+            foodId: e.foodId,
+          }),
+        );
+        return items.length;
+      },
+      logMeasurement: (row) => {
+        const date = row.date ?? get().selectedDate;
+        set((s) => ({
+          measurements: [
+            ...s.measurements.filter((m) => m.date !== date),
+            {
+              date,
+              waistCm: row.waistCm,
+              hipCm: row.hipCm,
+              chestCm: row.chestCm,
+            },
+          ].sort((a, b) => a.date.localeCompare(b.date)),
+        }));
+      },
+      addUserRecipe: (recipe) =>
+        set((s) => ({ userRecipes: [recipe, ...s.userRecipes].slice(0, 40) })),
       exportSnapshot: () => {
         const s = get();
         return {
@@ -547,6 +720,14 @@ export const useFarfurieStore = create<State>()(
           recoveryUntil: s.recoveryUntil,
           targetWeightKg: s.targetWeightKg,
           catalogFoods: s.catalogFoods,
+          programMode: s.programMode,
+          dietStyle: s.dietStyle,
+          weeklyRatePct: s.weeklyRatePct,
+          trainingDays: s.trainingDays,
+          lastCheckInAt: s.lastCheckInAt,
+          lastExpenditure: s.lastExpenditure,
+          measurements: s.measurements,
+          userRecipes: s.userRecipes,
         };
       },
       importSnapshot: (snapshot) => {
@@ -572,18 +753,31 @@ export const useFarfurieStore = create<State>()(
           recoveryUntil: snapshot.recoveryUntil,
           targetWeightKg: snapshot.targetWeightKg,
           catalogFoods: snapshot.catalogFoods,
+          programMode: snapshot.programMode ?? "manual",
+          dietStyle: snapshot.dietStyle ?? "balanced",
+          weeklyRatePct: snapshot.weeklyRatePct ?? 0.5,
+          trainingDays: snapshot.trainingDays ?? ["mon", "tue", "thu"],
+          lastCheckInAt: snapshot.lastCheckInAt ?? null,
+          lastExpenditure: snapshot.lastExpenditure ?? null,
+          measurements: snapshot.measurements ?? [],
+          userRecipes: snapshot.userRecipes ?? [],
           lastAddedId: null,
           selectedDate: localISO(),
         });
       },
       setProfile: (profile) => set({ profile }),
       applyProfileGoals: () => {
-        const goals = goalsFromProfile(get().profile);
-        set({ goals });
+        const s = get();
+        const kcal = calcCalorieGoal(s.profile);
+        set({ goals: macrosForStyle(kcal, s.profile.weightKg, s.dietStyle) });
       },
       completeOnboarding: () => {
-        const goals = goalsFromProfile(get().profile);
-        set({ goals, onboardingDone: true });
+        const s = get();
+        const kcal = calcCalorieGoal(s.profile);
+        set({
+          goals: macrosForStyle(kcal, s.profile.weightKg, s.dietStyle),
+          onboardingDone: true,
+        });
       },
       setPlanSlot: (day, meal, recipeId) =>
         set((s) => {
@@ -621,7 +815,8 @@ export const useFarfurieStore = create<State>()(
             : [...s.favoriteFoodIds, id],
         })),
       addRecipeToShopping: (recipeId) => {
-        const recipe = recipes.find((r) => r.id === recipeId);
+        const recipe =
+          recipes.find((r) => r.id === recipeId) ?? get().userRecipes.find((r) => r.id === recipeId);
         if (!recipe) return;
         const items: ShoppingItem[] = recipe.ingredientsRo.map((nameRo, i) => ({
           id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 5)}`,
@@ -673,12 +868,21 @@ export const useFarfurieStore = create<State>()(
         const base = get().goals;
         const recovery = get().isRecovery();
         const holiday = get().holidayMode;
-        const kcal = holiday ? Math.round(base.kcal * 1.15) : base.kcal;
+        const training = get().trainingDays.includes(
+          weekdayKeyFromISO(get().selectedDate) as DayKey,
+        );
+        let kcal = holiday ? Math.round(base.kcal * 1.15) : base.kcal;
+        let carbs = holiday ? Math.round(base.carbs * 1.15) : base.carbs;
+        const fat = holiday ? Math.round(base.fat * 1.15) : base.fat;
+        if (training) {
+          kcal += 150;
+          carbs += 35;
+        }
         return {
           kcal,
           protein: recovery ? Math.round(base.protein * 1.1) : base.protein,
-          carbs: holiday ? Math.round(base.carbs * 1.15) : base.carbs,
-          fat: holiday ? Math.round(base.fat * 1.15) : base.fat,
+          carbs,
+          fat,
           waterMl: base.waterMl,
         };
       },
@@ -763,8 +967,8 @@ export const useFarfurieStore = create<State>()(
       },
     }),
     {
-      name: "farfurie-demo-v3",
-      version: 7,
+      name: "farfurie-demo-v4",
+      version: 8,
       skipHydration: true,
       migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
@@ -790,18 +994,32 @@ export const useFarfurieStore = create<State>()(
             : { [today]: typeof s.waterMl === "number" ? s.waterMl : 0 };
         return {
           ...s,
-          entries,
+          entries: entries.length >= 10 ? entries : [...DEMO.entries, ...entries],
           exerciseLogs,
           waterByDate,
           selectedDate: today,
           theme: s.theme === "dark" ? "dark" : "light",
           dayNotes: s.dayNotes && typeof s.dayNotes === "object" ? s.dayNotes : {},
-          weightLogs: Array.isArray(s.weightLogs) ? s.weightLogs : [],
+          weightLogs:
+            Array.isArray(s.weightLogs) && s.weightLogs.length >= 4
+              ? s.weightLogs
+              : DEMO.weightLogs,
           savedMeals: Array.isArray(s.savedMeals) ? s.savedMeals : [],
           recoveryUntil: typeof s.recoveryUntil === "string" ? s.recoveryUntil : null,
           lastAddedId: null,
           targetWeightKg: typeof s.targetWeightKg === "number" ? s.targetWeightKg : 64,
           catalogFoods: Array.isArray(s.catalogFoods) ? s.catalogFoods : [],
+          programMode: s.programMode === "manual" ? "manual" : "coached",
+          dietStyle:
+            s.dietStyle === "highProtein" || s.dietStyle === "lowCarb" || s.dietStyle === "keto"
+              ? s.dietStyle
+              : "balanced",
+          weeklyRatePct: typeof s.weeklyRatePct === "number" ? s.weeklyRatePct : 0.5,
+          trainingDays: Array.isArray(s.trainingDays) ? s.trainingDays : ["mon", "tue", "thu"],
+          lastCheckInAt: typeof s.lastCheckInAt === "string" ? s.lastCheckInAt : null,
+          lastExpenditure: typeof s.lastExpenditure === "number" ? s.lastExpenditure : null,
+          measurements: Array.isArray(s.measurements) ? s.measurements : [],
+          userRecipes: Array.isArray(s.userRecipes) ? s.userRecipes : [],
         } as never;
       },
       onRehydrateStorage: () => () => {

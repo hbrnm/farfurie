@@ -68,10 +68,10 @@ export function MacroRing() {
           <div className="absolute inset-0 grid place-items-center text-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                {remainingLabel}
+                {remaining.kcal >= 0 ? remainingLabel : t(locale, "overPlan")}
               </p>
               <p className="display text-3xl text-brand">
-                {Math.max(0, remaining.kcal)}
+                {Math.abs(Math.round(remaining.kcal))}
               </p>
               <p className="text-xs text-ink-soft">{t(locale, "calories")}</p>
             </div>
@@ -82,8 +82,9 @@ export function MacroRing() {
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <p className="text-sm text-ink-soft">
-                {t(locale, "eaten")} · {totals.kcal} / {budget} kcal
+                {t(locale, "loggedVsPlan")} · {totals.kcal} / {budget} kcal
                 {burned > 0 ? ` (+${burned} ${t(locale, "burned").toLowerCase()})` : ""}
+                {remaining.kcal < 0 ? ` · ${Math.abs(Math.round(remaining.kcal))} ${t(locale, "overPlan")}` : ""}
               </p>
               {holidayMode && (
                 <p className="mt-1 text-xs font-semibold text-[var(--danger)]">

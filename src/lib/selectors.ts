@@ -1,24 +1,34 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { localISO, weekISODates } from "./dates";
-import { useFarfurieStore, type MealKey } from "./store";
+import { localISO, weekISODates, weekdayKeyFromISO } from "./dates";
+import { analyzeMetabolism } from "./metabolism";
+import { useFarfurieStore, type DayKey, type MealKey } from "./store";
 
 export function useEffectiveGoals() {
   const goals = useFarfurieStore((s) => s.goals);
   const holidayMode = useFarfurieStore((s) => s.holidayMode);
   const recoveryUntil = useFarfurieStore((s) => s.recoveryUntil);
+  const trainingDays = useFarfurieStore((s) => s.trainingDays);
+  const selectedDate = useFarfurieStore((s) => s.selectedDate);
   return useMemo(() => {
     const recovery = !!recoveryUntil && localISO() <= recoveryUntil;
-    const kcal = holidayMode ? Math.round(goals.kcal * 1.15) : goals.kcal;
+    const training = trainingDays.includes(weekdayKeyFromISO(selectedDate) as DayKey);
+    let kcal = holidayMode ? Math.round(goals.kcal * 1.15) : goals.kcal;
+    let carbs = holidayMode ? Math.round(goals.carbs * 1.15) : goals.carbs;
+    const fat = holidayMode ? Math.round(goals.fat * 1.15) : goals.fat;
+    if (training) {
+      kcal += 150;
+      carbs += 35;
+    }
     return {
       kcal,
       protein: recovery ? Math.round(goals.protein * 1.1) : goals.protein,
-      carbs: holidayMode ? Math.round(goals.carbs * 1.15) : goals.carbs,
-      fat: holidayMode ? Math.round(goals.fat * 1.15) : goals.fat,
+      carbs,
+      fat,
       waterMl: goals.waterMl,
     };
-  }, [goals, holidayMode, recoveryUntil]);
+  }, [goals, holidayMode, recoveryUntil, trainingDays, selectedDate]);
 }
 
 export function useDayEntries(date?: string) {
@@ -110,5 +120,27 @@ export function useWeekKcal() {
           .reduce((a, e) => a + e.macros.kcal, 0),
       ),
     [entries],
+  );
+}
+
+export function useMetabolism() {
+  const profile = useFarfurieStore((s) => s.profile);
+  const entries = useFarfurieStore((s) => s.entries);
+  const weightLogs = useFarfurieStore((s) => s.weightLogs);
+  const targetWeightKg = useFarfurieStore((s) => s.targetWeightKg);
+  const dietStyle = useFarfurieStore((s) => s.dietStyle);
+  const weeklyRatePct = useFarfurieStore((s) => s.weeklyRatePct);
+  return useMemo(
+    () =>
+      analyzeMetabolism({
+        profile,
+        entries,
+        weightLogs,
+        targetWeightKg,
+        dietStyle,
+        weeklyRatePct,
+        today: localISO(),
+      }),
+    [profile, entries, weightLogs, targetWeightKg, dietStyle, weeklyRatePct],
   );
 }
