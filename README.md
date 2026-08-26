@@ -19,6 +19,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 See [PRODUCT.md](./PRODUCT.md) for competitive analysis and differentiators.
 
+See [AUDIT.md](./AUDIT.md) for a product and technical audit (2026-08-26).
+
 ### Features
 
 1. **Umple golul** — meal suggestions that close remaining calories *and* protein
