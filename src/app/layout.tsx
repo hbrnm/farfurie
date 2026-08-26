@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Figtree } from "next/font/google";
+import { HydrateStore } from "@/components/HydrateStore";
 import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
@@ -48,8 +49,10 @@ export default function RootLayout({
   return (
     <html lang="ro">
       <body className={`${display.variable} ${body.variable} antialiased`}>
-        {children}
-        <PwaRegister />
+        <HydrateStore>
+          {children}
+          <PwaRegister />
+        </HydrateStore>
       </body>
     </html>
   );

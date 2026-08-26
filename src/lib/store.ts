@@ -504,6 +504,7 @@ export const useFarfurieStore = create<State>()(
     {
       name: "farfurie-demo-v3",
       version: 4,
+      skipHydration: true,
       migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
         if (version >= 4) return s as never;
