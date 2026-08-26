@@ -4,19 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  CalendarRange,
   ClipboardList,
   Home,
-  ShoppingBasket,
   UserRound,
 } from "lucide-react";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
 
 const links = [
   { href: "/app", key: "navDiary" as const, icon: Home },
+  { href: "/app/plan", key: "navPlan" as const, icon: CalendarRange },
   { href: "/app/recipes", key: "navRecipes" as const, icon: BookOpen },
   { href: "/app/list", key: "navList" as const, icon: ClipboardList },
-  { href: "/app/market", key: "navMarket" as const, icon: ShoppingBasket },
   { href: "/app/profile", key: "navProfile" as const, icon: UserRound },
 ];
 
@@ -29,6 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen pb-28 md:pb-10">
+      <OnboardingWizard />
       <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--surface)_80%,transparent)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-shell items-center justify-between gap-4 px-4 py-3 md:px-6">
           <Link href="/" className="display text-2xl text-brand">

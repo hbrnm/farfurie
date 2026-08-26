@@ -45,6 +45,20 @@ export type ExerciseLog = {
   createdAt: string;
 };
 
+export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+
+export type WeekPlan = Record<DayKey, Partial<Record<MealKey, string>>>;
+
+export const WEEK_DAYS: DayKey[] = [
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+  "sat",
+  "sun",
+];
+
 type Goals = Macros & { waterMl: number };
 
 type State = {
@@ -61,6 +75,8 @@ type State = {
   fastingProtocolId: string;
   fastingStartedAt: string | null;
   exerciseLogs: ExerciseLog[];
+  onboardingDone: boolean;
+  weekPlan: WeekPlan;
   setLocale: (locale: Locale) => void;
   toggleHoliday: () => void;
   addWater: () => void;
@@ -70,6 +86,10 @@ type State = {
   removeEntry: (id: string) => void;
   setProfile: (profile: ProfileInput) => void;
   applyProfileGoals: () => void;
+  completeOnboarding: () => void;
+  setPlanSlot: (day: DayKey, meal: MealKey, recipeId: string | null) => void;
+  applyTodayPlanToDiary: () => void;
+  addWeekPlanToShopping: () => void;
   toggleFavoriteRecipe: (id: string) => void;
   toggleFavoriteFood: (id: string) => void;
   addRecipeToShopping: (recipeId: string) => void;
@@ -102,6 +122,23 @@ function goalsFromProfile(profile: ProfileInput): Goals {
 
 const INITIAL_GOALS = goalsFromProfile(defaultProfile);
 
+function emptyWeekPlan(): WeekPlan {
+  return {
+    mon: { breakfast: "ovaz-napolact", lunch: "pui-orez" },
+    tue: { lunch: "salata-ton", dinner: "fasole-light" },
+    wed: { breakfast: "omleta-telemea", dinner: "ciorba-legume" },
+    thu: { lunch: "pui-orez" },
+    fri: { dinner: "linte-curry" },
+    sat: { lunch: "sarmale-light" },
+    sun: {},
+  };
+}
+
+function todayDayKey(): DayKey {
+  const map: DayKey[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  return map[new Date().getDay()];
+}
+
 export const useFarfurieStore = create<State>()(
   persist(
     (set, get) => ({
@@ -109,6 +146,8 @@ export const useFarfurieStore = create<State>()(
       holidayMode: false,
       waterMl: 750,
       streak: 4,
+      onboardingDone: false,
+      weekPlan: emptyWeekPlan(),
       profile: defaultProfile,
       goals: INITIAL_GOALS,
       favoriteRecipeIds: ["ovaz-napolact", "salata-ton"],
@@ -192,6 +231,33 @@ export const useFarfurieStore = create<State>()(
       applyProfileGoals: () => {
         const goals = goalsFromProfile(get().profile);
         set({ goals });
+      },
+      completeOnboarding: () => {
+        const goals = goalsFromProfile(get().profile);
+        set({ goals, onboardingDone: true });
+      },
+      setPlanSlot: (day, meal, recipeId) =>
+        set((s) => {
+          const dayPlan = { ...s.weekPlan[day] };
+          if (!recipeId) delete dayPlan[meal];
+          else dayPlan[meal] = recipeId;
+          return { weekPlan: { ...s.weekPlan, [day]: dayPlan } };
+        }),
+      applyTodayPlanToDiary: () => {
+        const day = todayDayKey();
+        const slots = get().weekPlan[day] ?? {};
+        (Object.entries(slots) as [MealKey, string][]).forEach(([meal, recipeId]) => {
+          if (recipeId) get().addRecipeToMeal(recipeId, meal);
+        });
+      },
+      addWeekPlanToShopping: () => {
+        const ids = new Set<string>();
+        WEEK_DAYS.forEach((day) => {
+          Object.values(get().weekPlan[day] ?? {}).forEach((id) => {
+            if (id) ids.add(id);
+          });
+        });
+        ids.forEach((id) => get().addRecipeToShopping(id));
       },
       toggleFavoriteRecipe: (id) =>
         set((s) => ({
@@ -328,8 +394,8 @@ export const useFarfurieStore = create<State>()(
         };
       },
     }),
-    { name: "farfurie-demo-v2" },
+    { name: "farfurie-demo-v3" },
   ),
 );
 
-export { calcBmr, calcTdee };
+export { calcBmr, calcTdee, todayDayKey };

@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Figtree } from "next/font/google";
+import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
 const display = Fraunces({
@@ -18,6 +19,25 @@ export const metadata: Metadata = {
   title: "Farfurie — Farfuria ta, înțeleasă",
   description:
     "Tracking de calorii și rețete pentru România: Umple golul, Oala comună, Calendarul pieței, Mod Sărbători. RO + EN.",
+  applicationName: "Farfurie",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Farfurie",
+  },
+  icons: {
+    icon: [{ url: "/icons/icon-192.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icons/icon-192.svg" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1b5e45",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -29,6 +49,7 @@ export default function RootLayout({
     <html lang="ro">
       <body className={`${display.variable} ${body.variable} antialiased`}>
         {children}
+        <PwaRegister />
       </body>
     </html>
   );

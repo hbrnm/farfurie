@@ -269,6 +269,13 @@ export function ProfileBoard() {
           <p className="display text-xl">{t(locale, "navInsights")}</p>
           <p className="mt-1 text-sm text-ink-soft">{t(locale, "openInsights")}</p>
         </Link>
+        <Link
+          href="/app/market"
+          className="surface block p-5 transition hover:-translate-y-0.5 sm:col-span-2"
+        >
+          <p className="display text-xl">{t(locale, "navMarket")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t(locale, "openMarket")}</p>
+        </Link>
       </section>
 
       <p className="text-center text-xs text-ink-soft">
