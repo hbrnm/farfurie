@@ -47,7 +47,7 @@ export function PremiumGate({
           </span>
           <span className="mt-1 block text-sm text-ink-soft">{t(locale, "unlockPremium")}</span>
         </span>
-        <span className="btn btn-primary !px-3 !py-2 text-sm">{t(locale, "upgrade")}</span>
+        <span className="btn btn-primary !px-3 !py-2 text-sm">{t(locale, "comingSoon")}</span>
       </button>
       {open && <Paywall feature={feature} onClose={() => setOpen(false)} />}
     </>

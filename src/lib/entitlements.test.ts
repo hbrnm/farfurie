@@ -8,11 +8,19 @@ describe("entitlements", () => {
     expect(canUse("free", "weightTracking")).toBe(true);
   });
 
-  it("blocks premium features on free tier", () => {
+  it("allows R1 local features on free tier", () => {
+    expect(canUse("free", "fastingTimer")).toBe(true);
+    expect(canUse("free", "autoShopping")).toBe(true);
+    expect(canUse("free", "historyExport")).toBe(true);
+    expect(canUse("free", "customMacros")).toBe(true);
+  });
+
+  it("blocks mock Premium features on free tier", () => {
     expect(canUse("free", "photoLog")).toBe(false);
-    expect(canUse("free", "fastingTimer")).toBe(false);
+    expect(canUse("free", "voiceLog")).toBe(false);
     expect(canUse("free", "autoMealPlan")).toBe(false);
     expect(canUse("free", "bodyFat")).toBe(false);
+    expect(canUse("free", "healthSync")).toBe(false);
   });
 
   it("allows all catalogued features on premium", () => {

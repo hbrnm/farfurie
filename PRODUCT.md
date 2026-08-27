@@ -54,33 +54,35 @@ Not a translation afterthought: bilingual UI, bilingual food names, portion labe
 
 ---
 
-## MVP scope (this codebase)
+## Release freeze — R1 “Farfurie Diary” (now)
 
-1. Marketing landing (brand-first)
-2. Daily diary with meals + remaining budget ring
-3. Romanian-centric food search + portion units
-4. Recipes with nutrition + “add to diary”
-5. Umple golul suggestions
-6. Calendarul pieței (seasonal board)
-7. Oala comună splitter
-8. Mod Sărbători toggle
-9. Language switch RO/EN
-10. Local persistence (demo profile)
+Ship an honest local journal. **Do not market or expose mocks** (photo/voice AI, Teams, Health sync, fake auto-plan, fake Premium checkout).
 
-## Shipped in v1.1
+**In R1**
 
-11. Profile + Mifflin–St Jeor BMR/TDEE calorie & macro goals
-12. Shopping list from recipes
-13. Recipe favorites
-14. Intermittent fasting timer (16:8, 14:10, 18:6, OMAD)
-15. Exercise logging (burned kcal returns to daily budget)
-16. Expanded RO supermarket / traditional food seed DB
+1. Daily diary (meals by date, remaining budget ring, fill-the-gap)
+2. Manual weekly meal plan → apply today + shopping list
+3. Weight log + 7-day calorie chart
+4. PWA (Add to Home Screen)
+5. Profile / BMR–TDEE, exercise log, fasting timer (local)
+6. Recipes, Oala comună, Calendarul pieței, Mod Sărbători
+7. RO/EN, local persistence (`farfurie-v4`)
 
-## Later (v2+)
+**Out of R1 (hidden until billing + real backends exist)**
 
-- Barcode scan + AI photo estimate
-- Nutritionist marketplace
-- Wearable sync
-- Community verified recipes
-- Native iOS/Android
-- Multi-day meal planner
+- Photo / voice / AI plate estimate
+- Teams / community
+- HealthKit / Health Connect
+- Automatic meal-plan generator
+- Progress photos and fake body-fat shortcuts
+- Paid Premium (paywall is “coming later”, not a one-click unlock)
+
+**Premium is postponed.** A developer toggle on the profile can simulate the client flag for leftover gates. It is not a purchase; APIs ignore `x-farfurie-tier`.
+
+## Later (R2 — Fitia-class)
+
+- Accounts + verified server-side plan (Stripe / store IAP)
+- Real food catalog (Open Food Facts + RO seed)
+- Camera barcode, real vision/voice logging
+- Health sync in a native shell
+- Teams, PDF export, diet-type planner

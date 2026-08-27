@@ -2,9 +2,13 @@ import type { FeatureId } from "@/lib/entitlements";
 import { canUse } from "@/lib/entitlements";
 import type { SubscriptionTier } from "@/domain/models";
 
-export function tierFromRequest(request: Request): SubscriptionTier {
-  const header = request.headers.get("x-farfurie-tier");
-  return header === "premium" ? "premium" : "free";
+/**
+ * R1: there is no billing and no user session.
+ * `x-farfurie-tier` is a leftover client hint — not authorization.
+ * Treat every request as free until a verified server-side plan exists.
+ */
+export function tierFromRequest(_request: Request): SubscriptionTier {
+  return "free";
 }
 
 export function premiumOrPaywall(request: Request, feature: FeatureId) {

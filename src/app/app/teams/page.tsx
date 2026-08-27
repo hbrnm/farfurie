@@ -1,5 +1,6 @@
-import { TeamsBoard } from "@/modules/calorie-counter/TeamsBoard";
+import { redirect } from "next/navigation";
 
+/** Teams is out of R1 — no community backend. */
 export default function TeamsPage() {
-  return <TeamsBoard />;
+  redirect("/app");
 }

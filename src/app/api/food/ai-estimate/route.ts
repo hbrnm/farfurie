@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { premiumOrPaywall } from "@/server/premium";
 import { foods, macrosForGrams } from "@/lib/foods";
 
-/** Demo AI estimate — Premium only. No real vision/audio model in this build. */
+/** R1: photo/voice AI is not shipped. This route always 402 (header is not auth). */
 export async function POST(request: NextRequest) {
   const blocked = premiumOrPaywall(request, "photoLog");
   if (blocked) return blocked;

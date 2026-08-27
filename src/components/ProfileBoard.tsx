@@ -17,7 +17,6 @@ import { t } from "@/lib/i18n";
 import { useBurnedToday, useTodayKey } from "@/lib/selectors";
 import { onDate } from "@/lib/diary";
 import { useFarfurieStore } from "@/lib/store";
-import { PremiumGate } from "@/components/PremiumGate";
 
 export function ProfileBoard() {
   const locale = useFarfurieStore((s) => s.locale);
@@ -152,44 +151,22 @@ export function ProfileBoard() {
       </section>
 
       <section className="surface p-5">
-        <h2 className="display text-2xl">{t(locale, "managePlan")}</h2>
-        <p className="mt-1 text-sm font-semibold text-brand">
-          {tier === "premium" ? t(locale, "premium") : t(locale, "free")}
-        </p>
-        {tier === "premium" ? (
-          <button
-            type="button"
-            className="btn btn-ghost mt-4 text-sm"
-            onClick={() => setSubscriptionTier("free")}
-          >
-            {t(locale, "downgrade")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn-primary mt-4"
-            onClick={() => setSubscriptionTier("premium")}
-          >
-            {t(locale, "upgrade")}
-          </button>
-        )}
-        <PremiumGate feature="customMacros">
-          <button
-            type="button"
-            className="btn btn-ghost mt-3 w-full text-sm"
-            onClick={() =>
-              setCustomMacros({
-                kcal: preview.kcal,
-                protein: Math.round(profile.weightKg * 2),
-                carbs: 180,
-                fat: 55,
-                waterMl: 2500,
-              })
-            }
-          >
-            {t(locale, "customTargets")}
-          </button>
-        </PremiumGate>
+        <h2 className="display text-2xl">{t(locale, "customTargets")}</h2>
+        <button
+          type="button"
+          className="btn btn-ghost mt-3 w-full text-sm"
+          onClick={() =>
+            setCustomMacros({
+              kcal: preview.kcal,
+              protein: Math.round(profile.weightKg * 2),
+              carbs: 180,
+              fat: 55,
+              waterMl: 2500,
+            })
+          }
+        >
+          {t(locale, "customTargets")}
+        </button>
       </section>
 
       <section className="surface p-5">
@@ -261,12 +238,6 @@ export function ProfileBoard() {
           <p className="display text-xl">{t(locale, "navInsights")}</p>
           <p className="mt-1 text-sm text-ink-soft">{t(locale, "openInsights")}</p>
         </Link>
-        <Link href="/app/teams" className="surface block p-5 transition hover:-translate-y-0.5">
-          <p className="display text-xl">{t(locale, "teams")}</p>
-        </Link>
-        <Link href="/app/compare" className="surface block p-5 transition hover:-translate-y-0.5">
-          <p className="display text-xl">{t(locale, "compare")}</p>
-        </Link>
         <Link href="/app/recipes" className="surface block p-5 transition hover:-translate-y-0.5">
           <p className="display text-xl">{t(locale, "navRecipes")}</p>
         </Link>
@@ -286,6 +257,31 @@ export function ProfileBoard() {
         {t(locale, "favorites")}: {favoriteRecipeIds.length}{" "}
         {locale === "ro" ? "rețete" : "recipes"}
       </p>
+
+      <section className="surface space-y-3 border-dashed p-5">
+        <h2 className="display text-2xl">{t(locale, "devMode")}</h2>
+        <p className="text-sm text-ink-soft">{t(locale, "devModeHint")}</p>
+        <p className="text-sm font-semibold text-brand">
+          {tier === "premium" ? t(locale, "premium") : t(locale, "free")}
+        </p>
+        {tier === "premium" ? (
+          <button
+            type="button"
+            className="btn btn-ghost text-sm"
+            onClick={() => setSubscriptionTier("free")}
+          >
+            {t(locale, "stopSimulate")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-ghost text-sm"
+            onClick={() => setSubscriptionTier("premium")}
+          >
+            {t(locale, "simulatePremium")}
+          </button>
+        )}
+      </section>
 
       <section className="surface space-y-3 p-5">
         <p className="text-sm text-ink-soft">{t(locale, "disclaimer")}</p>
@@ -307,31 +303,26 @@ export function ProfileBoard() {
           >
             {t(locale, "exportData")}
           </button>
-          <PremiumGate
-            feature="historyExport"
-            fallback={<span className="btn btn-ghost text-sm">{t(locale, "exportCsv")}</span>}
+          <button
+            type="button"
+            className="btn btn-ghost text-sm"
+            onClick={() => {
+              const rows = useFarfurieStore.getState().entries.map(
+                (e) =>
+                  `${e.dateKey},${e.meal},${e.nameRo},${e.macros.kcal},${e.macros.protein},${e.macros.carbs},${e.macros.fat}`,
+              );
+              const csv = ["date,meal,name,kcal,protein,carbs,fat", ...rows].join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `farfurie-${today}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
           >
-            <button
-              type="button"
-              className="btn btn-ghost text-sm"
-              onClick={() => {
-                const rows = useFarfurieStore.getState().entries.map(
-                  (e) =>
-                    `${e.dateKey},${e.meal},${e.nameRo},${e.macros.kcal},${e.macros.protein},${e.macros.carbs},${e.macros.fat}`,
-                );
-                const csv = ["date,meal,name,kcal,protein,carbs,fat", ...rows].join("\n");
-                const blob = new Blob([csv], { type: "text/csv" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `farfurie-${today}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-            >
-              {t(locale, "exportCsv")}
-            </button>
-          </PremiumGate>
+            {t(locale, "exportCsv")}
+          </button>
           <button type="button" className="btn btn-ghost text-sm" onClick={resetToday}>
             {t(locale, "resetToday")}
           </button>
