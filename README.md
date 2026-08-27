@@ -19,7 +19,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 See [PRODUCT.md](./PRODUCT.md) for competitive analysis and differentiators.
 
-See [AUDIT.md](./AUDIT.md) for a product and technical audit (2026-08-26).
+See [AUDIT.md](./AUDIT.md) for a product and technical audit (2026-08-26).  
+See [AUDIT-PRODUCTION.md](./AUDIT-PRODUCTION.md) for the production-readiness audit (2026-08-27).
 
 ### Features
 
