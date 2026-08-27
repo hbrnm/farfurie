@@ -1,3 +1,4 @@
+import { GoogleGenAI } from "@google/genai";
 import jpeg from "jpeg-js";
 import { searchOffProducts } from "@/lib/server/off";
 import { foods, macrosForGrams, searchFoods, type Food } from "@/lib/foods";
@@ -134,66 +135,74 @@ Prefer typical RO portions (farfurie, lingură, pahar). foodId if it matches: sa
 async function geminiEstimate(base64: string, mime: string, hint: string) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: `${VISION_PROMPT}${hint ? `\nUser hint: ${hint}` : ""}` },
-              { inline_data: { mime_type: mime, data: base64 } },
-            ],
-          },
-        ],
-        generationConfig: { temperature: 0.2 },
-      }),
-    },
-  );
-  if (!res.ok) return null;
-  const data = (await res.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("\n") ?? "";
-  const parsed = parseJsonBlob(text);
-  if (!parsed) return null;
-  const items = guessesFromModel(parsed);
-  return items.length ? items : null;
+  try {
+    const ai = new GoogleGenAI({ apiKey: key });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: `${VISION_PROMPT}${hint ? `\nUser hint: ${hint}` : ""}` },
+            {
+              inlineData: {
+                mimeType: mime,
+                data: base64,
+              },
+            },
+          ],
+        },
+      ],
+      config: {
+        temperature: 0.2,
+      },
+    });
+
+    const text = response.text ?? "";
+    const parsed = parseJsonBlob(text);
+    if (!parsed) return null;
+    const items = guessesFromModel(parsed);
+    return items.length ? items : null;
+  } catch {
+    return null;
+  }
 }
 
 async function openaiEstimate(base64: string, mime: string, hint: string) {
   const key = process.env.OPENAI_API_KEY;
   if (!key) return null;
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.2,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: `${VISION_PROMPT}${hint ? `\nUser hint: ${hint}` : ""}` },
-            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
-          ],
-        },
-      ],
-    }),
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const parsed = parseJsonBlob(data.choices?.[0]?.message?.content ?? "");
-  if (!parsed) return null;
-  const items = guessesFromModel(parsed);
-  return items.length ? items : null;
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0.2,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: `${VISION_PROMPT}${hint ? `\nUser hint: ${hint}` : ""}` },
+              { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const parsed = parseJsonBlob(data.choices?.[0]?.message?.content ?? "");
+    if (!parsed) return null;
+    const items = guessesFromModel(parsed);
+    return items.length ? items : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function estimatePlate(input: {
@@ -210,8 +219,8 @@ export async function estimatePlate(input: {
     return {
       provider: "gemini",
       items: gemini,
-      noteRo: "Estimare din poză (Gemini).",
-      noteEn: "Estimate from the photo (Gemini).",
+      noteRo: "Estimare din poză (Gemini 2.5 Flash).",
+      noteEn: "Estimate from the photo (Gemini 2.5 Flash).",
     };
   }
   const openai = await openaiEstimate(input.imageBase64.replace(/^data:[^;]+;base64,/, ""), mime, hint);
