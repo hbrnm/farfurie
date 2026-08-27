@@ -72,7 +72,7 @@ export const translations = {
     fromYazio: "De la Yazio: claritate vizuală + planuri care se respectă.",
     fromMfp: "De la MyFitnessPal: precizie pe macros + acoperire internațională.",
     uniqueTitle: "Ce alții nu au",
-    footerNote: "MVP demo · date locale pe dispozitiv · RO + EN",
+    footerNote: "R1 · jurnal local (cont opțional) · fără plată · RO + EN",
     total: "Total oală",
     members: "Membri",
     split: "Împarte",
@@ -275,7 +275,8 @@ export const translations = {
     featureAccount: "Cont + sync",
     featureAccountText: "Același jurnal pe dispozitive, fără să vinzi datele la un marketplace.",
     featurePlatePhoto: "Farfurie din poză",
-    featurePlatePhotoText: "O fotografie, macros estimate, porții românești.",
+    featurePlatePhotoText:
+      "Estimare din culoare, șabloane și catalog — nu un model de viziune implicit.",
     navProgram: "Program",
     programTitle: "Program metabolic",
     programDesc:
@@ -437,7 +438,7 @@ export const translations = {
     fromYazio: "From Yazio: visual clarity + plans you can follow.",
     fromMfp: "From MyFitnessPal: macro precision + international coverage.",
     uniqueTitle: "What others don’t have",
-    footerNote: "MVP demo · local device data · RO + EN",
+    footerNote: "R1 · local diary (optional account) · no checkout · RO + EN",
     total: "Pot total",
     members: "Members",
     split: "Split",
@@ -640,7 +641,8 @@ export const translations = {
     featureAccount: "Account + sync",
     featureAccountText: "The same diary across devices, without selling data to a marketplace.",
     featurePlatePhoto: "Plate from a photo",
-    featurePlatePhotoText: "One photo, estimated macros, Romanian portions.",
+    featurePlatePhotoText:
+      "Colour/template + catalog estimate — not a default vision model.",
     navProgram: "Program",
     programTitle: "Metabolic program",
     programDesc:

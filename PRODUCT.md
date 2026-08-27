@@ -54,33 +54,32 @@ Not a translation afterthought: bilingual UI, bilingual food names, portion labe
 
 ---
 
-## MVP scope (this codebase)
+## Release freeze — R1 (this PR)
 
-1. Marketing landing (brand-first)
-2. Daily diary with meals + remaining budget ring
-3. Romanian-centric food search + portion units
-4. Recipes with nutrition + “add to diary”
-5. Umple golul suggestions
-6. Calendarul pieței (seasonal board)
-7. Oala comună splitter
-8. Mod Sărbători toggle
-9. Language switch RO/EN
-10. Local persistence (demo profile)
+Ship an honest diary. This branch already has more than a mock: local journal, metabolic program, OFF barcodes, optional account sync, recipe import.
 
-## Shipped in v1.1
+**In R1 (market and keep)**
 
-11. Profile + Mifflin–St Jeor BMR/TDEE calorie & macro goals
-12. Shopping list from recipes
-13. Recipe favorites
-14. Intermittent fasting timer (16:8, 14:10, 18:6, OMAD)
-15. Exercise logging (burned kcal returns to daily budget)
-16. Expanded RO supermarket / traditional food seed DB
+1. Daily diary, remaining budget, fill-the-gap
+2. Manual weekly plan + shopping list
+3. Weight + metabolic program (trend, weekly check-in)
+4. PWA
+5. RO catalog + Open Food Facts scan
+6. Recipe import from pasted text
+7. Optional account / sync
+8. Oala comună, Calendarul pieței, Mod Sărbători, RO/EN
 
-## Later (v2+)
+**Do not sell as done**
 
-- Barcode scan + AI photo estimate
-- Nutritionist marketplace
-- Wearable sync
-- Community verified recipes
-- Native iOS/Android
-- Multi-day meal planner
+- Real vision AI (plate photo is colour/template + optional Gemini key — not a trained model by default)
+- Paid Premium / IAP (there is no checkout)
+- HealthKit / Health Connect / Teams / community
+
+**Premium is postponed.** There is no `setSubscriptionTier` unlock on this branch. Do not add a fake paywall.
+
+## Later (R2)
+
+- Verified billing (Stripe / store IAP)
+- Default-on vision model with privacy review
+- Health sync in a native shell
+- Teams / nutritionist marketplace

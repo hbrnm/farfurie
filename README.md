@@ -15,7 +15,18 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+```bash
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm build
+```
+
+Or `pnpm ci` — same gate as GitHub Actions (`.github/workflows/ci.yml`).
+
 ## Product
+
+**R1 freeze** (this PR): honest local diary + optional account, OFF scan, metabolic program. No paid Premium. Plate photo stays in-app as a heuristic, not as landing AI. See [PRODUCT.md](./PRODUCT.md).
 
 See [PRODUCT.md](./PRODUCT.md) for competitive analysis and differentiators.
 

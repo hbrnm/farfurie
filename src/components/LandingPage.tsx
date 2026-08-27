@@ -4,7 +4,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   CalendarDays,
-  Camera,
   Cloud,
   Gauge,
   PartyPopper,
@@ -32,7 +31,6 @@ const features = [
   { key: "featureScan", text: "featureScanText", icon: ScanBarcode },
   { key: "featureOff", text: "featureOffText", icon: ScanBarcode },
   { key: "featureAccount", text: "featureAccountText", icon: Cloud },
-  { key: "featurePlatePhoto", text: "featurePlatePhotoText", icon: Camera },
   { key: "featureCoach", text: "featureCoachText", icon: Sparkles },
   { key: "featureRecovery", text: "featureRecoveryText", icon: PartyPopper },
 ] as const;
