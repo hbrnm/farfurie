@@ -15,7 +15,18 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+```bash
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm build
+```
+
+Or `pnpm ci` for the same gate as GitHub Actions (`.github/workflows/ci.yml`).
+
 ## Product
+
+**R1 Farfurie Diary** (current freeze): local journal, manual week plan, weight, PWA. No checkout, no photo/voice AI, no Teams, no Health sync. See [PRODUCT.md](./PRODUCT.md).
 
 See [PRODUCT.md](./PRODUCT.md) for competitive analysis and differentiators.
 
