@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { t } from "@/lib/i18n";
 import { localISO } from "@/lib/dates";
 import { useFarfurieStore } from "@/lib/store";
@@ -48,7 +49,7 @@ export function MacroRing() {
               stroke="rgba(20,32,26,0.08)"
               strokeWidth="12"
             />
-            <circle
+            <motion.circle
               cx="70"
               cy="70"
               r={radius}
@@ -57,8 +58,9 @@ export function MacroRing() {
               strokeWidth="12"
               strokeLinecap="round"
               strokeDasharray={circ}
-              strokeDashoffset={offset}
-              style={{ transition: "stroke-dashoffset 0.6s ease" }}
+              initial={{ strokeDashoffset: circ }}
+              animate={{ strokeDashoffset: offset }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             />
             <defs>
               <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
@@ -72,9 +74,14 @@ export function MacroRing() {
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
                 {remaining.kcal >= 0 ? remainingLabel : t(locale, "overPlan")}
               </p>
-              <p className="display text-3xl text-brand">
+              <motion.p
+                key={remaining.kcal}
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="display text-3xl text-brand"
+              >
                 {Math.abs(Math.round(remaining.kcal))}
-              </p>
+              </motion.p>
               <p className="text-xs text-ink-soft">{t(locale, "calories")}</p>
             </div>
           </div>
@@ -119,9 +126,12 @@ export function MacroRing() {
                     </span>
                   </div>
                   <div className="progress-track">
-                    <div
+                    <motion.div
                       className="progress-fill"
-                      style={{ width: `${width}%`, background: m.color }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${width}%` }}
+                      transition={{ type: "spring", stiffness: 90, damping: 15 }}
+                      style={{ background: m.color }}
                     />
                   </div>
                 </div>

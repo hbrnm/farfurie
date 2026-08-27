@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, ShoppingCart, Undo2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Beer, FileText, Share2, Wine } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { dayShareText } from "@/lib/share";
-import { type DiaryEntry, type MealKey, useFarfurieStore } from "@/lib/store";
-import { useTotals } from "@/lib/selectors";
-
-const meals: MealKey[] = ["breakfast", "lunch", "dinner", "snack"];
+import { triggerHaptic } from "@/lib/haptics";
+import { type DiaryEntry, useFarfurieStore } from "@/lib/store";
+import { useBurnedToday, useEffectiveGoals, useTotals } from "@/lib/selectors";
 
 type Props = {
   entries: DiaryEntry[];
@@ -16,25 +16,28 @@ type Props = {
 export function DiaryQuickActions({ entries }: Props) {
   const locale = useFarfurieStore((s) => s.locale);
   const selectedDate = useFarfurieStore((s) => s.selectedDate);
-  const lastAddedId = useFarfurieStore((s) => s.lastAddedId);
-  const undoLastEntry = useFarfurieStore((s) => s.undoLastEntry);
-  const addSelectedDayToShopping = useFarfurieStore((s) => s.addSelectedDayToShopping);
   const addFoodToMeal = useFarfurieStore((s) => s.addFoodToMeal);
-  const setDayNote = useFarfurieStore((s) => s.setDayNote);
   const dayNotes = useFarfurieStore((s) => s.dayNotes);
-  const saveMealFromSelected = useFarfurieStore((s) => s.saveMealFromSelected);
-  const goals = useFarfurieStore((s) => s.goals);
-  const waterMl = useFarfurieStore((s) => s.waterForSelected());
-  const burned = useFarfurieStore((s) => s.burnedToday());
+  const setDayNote = useFarfurieStore((s) => s.setDayNote);
+  const waterByDate = useFarfurieStore((s) => s.waterByDate);
+
+  const goals = useEffectiveGoals();
   const totals = useTotals();
+  const burned = useBurnedToday();
+  const waterMl = waterByDate[selectedDate] ?? 0;
 
-  const [shareMsg, setShareMsg] = useState("");
-  const [saveName, setSaveName] = useState("");
-  const [saveFor, setSaveFor] = useState<MealKey>("lunch");
+  const [shareFeedback, setShareFeedback] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
 
-  const note = dayNotes[selectedDate] ?? "";
+  const currentNote = dayNotes[selectedDate] ?? "";
 
-  const share = async () => {
+  const handleQuickLog = (foodId: "bere-blonda-500ml" | "vin-rosu-150ml") => {
+    triggerHaptic("success");
+    addFoodToMeal(foodId, "snack", foodId === "bere-blonda-500ml" ? 500 : 150);
+  };
+
+  const handleShare = async () => {
+    triggerHaptic("light");
     const text = dayShareText({
       locale,
       date: selectedDate,
@@ -44,99 +47,80 @@ export function DiaryQuickActions({ entries }: Props) {
       burned,
       waterMl,
     });
-    try {
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Farfurie", text });
+      } catch {
+        // user cancelled share sheet
+      }
+    } else {
       await navigator.clipboard.writeText(text);
-      setShareMsg(t(locale, "copiedShare"));
-    } catch {
-      setShareMsg(text);
+      setShareFeedback(true);
+      setTimeout(() => setShareFeedback(false), 2000);
     }
-    window.setTimeout(() => setShareMsg(""), 2500);
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        <button
+        <motion.button
+          whileTap={{ scale: 0.94 }}
           type="button"
-          className="btn btn-ghost !px-3 !py-2 text-sm"
-          disabled={!lastAddedId}
-          onClick={undoLastEntry}
+          className="btn btn-ghost text-sm"
+          disabled={entries.length === 0}
+          onClick={handleShare}
         >
-          <Undo2 size={14} />
-          {t(locale, "undo")}
-        </button>
-        <button type="button" className="btn btn-ghost !px-3 !py-2 text-sm" onClick={() => void share()}>
-          <Share2 size={14} />
+          <Share2 size={16} />
           {t(locale, "shareDay")}
-        </button>
-        <button type="button" className="btn btn-ghost !px-3 !py-2 text-sm" onClick={addSelectedDayToShopping}>
-          <ShoppingCart size={14} />
-          {t(locale, "shopFromDay")}
-        </button>
-        <button
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.94 }}
           type="button"
-          className="btn btn-ghost !px-3 !py-2 text-sm"
-          onClick={() => addFoodToMeal("bere-silva", "snack")}
+          className="btn btn-ghost text-sm"
+          onClick={() => handleQuickLog("bere-blonda-500ml")}
         >
+          <Beer size={16} />
           {t(locale, "logBeer")}
-        </button>
-        <button
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.94 }}
           type="button"
-          className="btn btn-ghost !px-3 !py-2 text-sm"
-          onClick={() => addFoodToMeal("vin-feteasca", "snack")}
+          className="btn btn-ghost text-sm"
+          onClick={() => handleQuickLog("vin-rosu-150ml")}
         >
+          <Wine size={16} />
           {t(locale, "logWine")}
-        </button>
-      </div>
-      {shareMsg && <p className="text-sm font-semibold text-brand">{shareMsg}</p>}
+        </motion.button>
 
-      <label className="surface block p-4">
-        <span className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+        <motion.button
+          whileTap={{ scale: 0.94 }}
+          type="button"
+          className="btn btn-ghost text-sm"
+          onClick={() => setNoteOpen(!noteOpen)}
+        >
+          <FileText size={16} />
           {t(locale, "dayNote")}
-        </span>
-        <textarea
-          value={note}
-          onChange={(e) => setDayNote(selectedDate, e.target.value)}
-          placeholder={t(locale, "dayNotePh")}
-          rows={2}
-          className="mt-2 w-full resize-none rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none"
-        />
-      </label>
+        </motion.button>
+      </div>
 
-      <section className="surface p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-          {t(locale, "saveMeal")}
-        </p>
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-          <select
-            className="rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm"
-            value={saveFor}
-            onChange={(e) => setSaveFor(e.target.value as MealKey)}
-          >
-            {meals.map((m) => (
-              <option key={m} value={m}>
-                {t(locale, m)}
-              </option>
-            ))}
-          </select>
-          <input
-            value={saveName}
-            onChange={(e) => setSaveName(e.target.value)}
-            placeholder={t(locale, "mealName")}
-            className="flex-1 rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm"
+      {shareFeedback && (
+        <p className="text-xs font-semibold text-brand">{t(locale, "copiedShare")}</p>
+      )}
+
+      {noteOpen && (
+        <div className="surface p-4 animate-rise">
+          <textarea
+            value={currentNote}
+            onChange={(e) => setDayNote(selectedDate, e.target.value)}
+            placeholder={t(locale, "dayNotePh")}
+            className="w-full rounded-2xl border border-[var(--line)] bg-white/70 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+            rows={3}
           />
-          <button
-            type="button"
-            className="btn btn-primary text-sm"
-            onClick={() => {
-              saveMealFromSelected(saveFor, saveName);
-              setSaveName("");
-            }}
-          >
-            {t(locale, "saveMeal")}
-          </button>
         </div>
-      </section>
+      )}
     </div>
   );
 }
