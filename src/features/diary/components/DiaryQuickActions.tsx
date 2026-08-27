@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Beer, FileText, Share2, Wine } from "lucide-react";
+import { Camera, Droplets, FileText, Search, Share2, Sparkles, PlusCircle } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { dayShareText } from "@/lib/share";
 import { triggerHaptic } from "@/lib/haptics";
@@ -16,7 +17,7 @@ type Props = {
 export function DiaryQuickActions({ entries }: Props) {
   const locale = useFarfurieStore((s) => s.locale);
   const selectedDate = useFarfurieStore((s) => s.selectedDate);
-  const addFoodToMeal = useFarfurieStore((s) => s.addFoodToMeal);
+  const addWater = useFarfurieStore((s) => s.addWater);
   const dayNotes = useFarfurieStore((s) => s.dayNotes);
   const setDayNote = useFarfurieStore((s) => s.setDayNote);
   const waterByDate = useFarfurieStore((s) => s.waterByDate);
@@ -31,9 +32,9 @@ export function DiaryQuickActions({ entries }: Props) {
 
   const currentNote = dayNotes[selectedDate] ?? "";
 
-  const handleQuickLog = (foodId: "bere-blonda-500ml" | "vin-rosu-150ml") => {
-    triggerHaptic("success");
-    addFoodToMeal(foodId, "snack", foodId === "bere-blonda-500ml" ? 500 : 150);
+  const handleAddWater = () => {
+    triggerHaptic("light");
+    addWater();
   };
 
   const handleShare = async () => {
@@ -52,7 +53,7 @@ export function DiaryQuickActions({ entries }: Props) {
       try {
         await navigator.share({ title: "Farfurie", text });
       } catch {
-        // user cancelled share sheet
+        // user cancelled
       }
     } else {
       await navigator.clipboard.writeText(text);
@@ -62,48 +63,104 @@ export function DiaryQuickActions({ entries }: Props) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-4">
+      {/* Quick Action Cards Grid (Inspired by Mockup 2) */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Scaner AI */}
+        <Link href="/app/plate">
+          <motion.div
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className="surface flex flex-col justify-between p-3.5 transition-colors hover:border-emerald-500/40"
+          >
+            <div className="flex items-center justify-between">
+              <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-600">
+                <Camera size={20} />
+              </div>
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                Gemini 2.5
+              </span>
+            </div>
+            <div className="mt-3">
+              <p className="text-xs font-bold text-gray-900">Scaner AI</p>
+              <p className="text-[11px] text-ink-soft">Foto farfurie</p>
+            </div>
+          </motion.div>
+        </Link>
+
+        {/* Căutare Market */}
+        <Link href="/app/market">
+          <motion.div
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className="surface flex flex-col justify-between p-3.5 transition-colors hover:border-amber-500/40"
+          >
+            <div className="flex items-center justify-between">
+              <div className="rounded-xl bg-amber-500/10 p-2 text-amber-600">
+                <Search size={20} />
+              </div>
+              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                Bază RO
+              </span>
+            </div>
+            <div className="mt-3">
+              <p className="text-xs font-bold text-gray-900">Căutare Aliment</p>
+              <p className="text-[11px] text-ink-soft">Supermarketuri</p>
+            </div>
+          </motion.div>
+        </Link>
+
+        {/* Adaugă Apă */}
         <motion.button
-          whileTap={{ scale: 0.94 }}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
           type="button"
-          className="btn btn-ghost text-sm"
-          disabled={entries.length === 0}
+          onClick={handleAddWater}
+          className="surface flex flex-col justify-between p-3.5 text-left transition-colors hover:border-blue-500/40"
+        >
+          <div className="flex items-center justify-between">
+            <div className="rounded-xl bg-blue-500/10 p-2 text-blue-600">
+              <Droplets size={20} />
+            </div>
+            <span className="text-xs font-bold text-blue-600">+250ml</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-xs font-bold text-gray-900">Hidratare</p>
+            <p className="text-[11px] text-ink-soft">{waterMl} ml total</p>
+          </div>
+        </motion.button>
+
+        {/* Notă & Share */}
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          type="button"
           onClick={handleShare}
+          className="surface flex flex-col justify-between p-3.5 text-left transition-colors hover:border-purple-500/40"
         >
-          <Share2 size={16} />
-          {t(locale, "shareDay")}
+          <div className="flex items-center justify-between">
+            <div className="rounded-xl bg-purple-500/10 p-2 text-purple-600">
+              <Share2 size={20} />
+            </div>
+            <span className="text-xs font-bold text-purple-600">Export</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-xs font-bold text-gray-900">Trimite Sumar</p>
+            <p className="text-[11px] text-ink-soft">Text / WhatsApp</p>
+          </div>
         </motion.button>
+      </div>
 
-        <motion.button
-          whileTap={{ scale: 0.94 }}
+      {/* Toolbar secundar pentru Notă de zi */}
+      <div className="flex justify-end">
+        <button
           type="button"
-          className="btn btn-ghost text-sm"
-          onClick={() => handleQuickLog("bere-blonda-500ml")}
-        >
-          <Beer size={16} />
-          {t(locale, "logBeer")}
-        </motion.button>
-
-        <motion.button
-          whileTap={{ scale: 0.94 }}
-          type="button"
-          className="btn btn-ghost text-sm"
-          onClick={() => handleQuickLog("vin-rosu-150ml")}
-        >
-          <Wine size={16} />
-          {t(locale, "logWine")}
-        </motion.button>
-
-        <motion.button
-          whileTap={{ scale: 0.94 }}
-          type="button"
-          className="btn btn-ghost text-sm"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-brand"
           onClick={() => setNoteOpen(!noteOpen)}
         >
-          <FileText size={16} />
+          <FileText size={14} />
           {t(locale, "dayNote")}
-        </motion.button>
+        </button>
       </div>
 
       {shareFeedback && (
