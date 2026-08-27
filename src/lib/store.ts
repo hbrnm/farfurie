@@ -161,6 +161,7 @@ type State = {
   setPlanSlot: (day: DayKey, meal: MealKey, recipeId: string | null) => void;
   applyTodayPlanToDiary: () => void;
   addWeekPlanToShopping: () => void;
+  autoGenerateWeekPlan: () => void;
   toggleFavoriteRecipe: (id: string) => void;
   toggleFavoriteFood: (id: string) => void;
   addRecipeToShopping: (recipeId: string) => void;
@@ -839,6 +840,30 @@ const storeCreator: StateCreator<State> = (set, get) => ({
           });
         });
         ids.forEach((id) => get().addRecipeToShopping(id));
+      },
+      autoGenerateWeekPlan: () => {
+        const available = [...recipes, ...get().userRecipes];
+        if (available.length === 0) return;
+        const newPlan: WeekPlan = {
+          mon: {},
+          tue: {},
+          wed: {},
+          thu: {},
+          fri: {},
+          sat: {},
+          sun: {},
+        };
+        WEEK_DAYS.forEach((day, dayIdx) => {
+          const bRecipe = available[(dayIdx * 3) % available.length];
+          const lRecipe = available[(dayIdx * 3 + 1) % available.length];
+          const dRecipe = available[(dayIdx * 3 + 2) % available.length];
+          newPlan[day] = {
+            breakfast: bRecipe.id,
+            lunch: lRecipe.id,
+            dinner: dRecipe.id,
+          };
+        });
+        set({ weekPlan: newPlan });
       },
       toggleFavoriteRecipe: (id: string) =>
         set((s: State) => ({
