@@ -5,9 +5,11 @@ import { Camera, ImagePlus } from "lucide-react";
 import { t } from "@/lib/i18n";
 import type { PlateEstimate } from "@/lib/plate-types";
 import { type MealKey, useFarfurieStore } from "@/lib/store";
+import { useVisionAvailable } from "@/lib/useVisionAvailable";
 
 export function PlatePhotoBoard() {
   const locale = useFarfurieStore((s) => s.locale);
+  const vision = useVisionAvailable();
   const addFoodToMeal = useFarfurieStore((s) => s.addFoodToMeal);
   const addEntry = useFarfurieStore((s) => s.addEntry);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -90,7 +92,16 @@ export function PlatePhotoBoard() {
     <div className="space-y-6">
       <header className="animate-rise">
         <h1 className="display text-3xl md:text-4xl">{t(locale, "platePhotoTitle")}</h1>
-        <p className="mt-2 max-w-2xl text-ink-soft">{t(locale, "platePhotoDesc")}</p>
+        <p className="mt-2 max-w-2xl text-ink-soft">
+          {vision
+            ? t(locale, "platePhotoDescVision")
+            : t(locale, "platePhotoDescHeuristic")}
+        </p>
+        {vision !== null && (
+          <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-brand">
+            {vision ? t(locale, "visionLive") : t(locale, "visionHeuristic")}
+          </p>
+        )}
       </header>
 
       <section className="surface space-y-4 p-5">

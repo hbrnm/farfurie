@@ -34,7 +34,7 @@ export const translations = {
     add: "Adaugă",
     recipesTitle: "Rețete cu porții românești",
     recipesDesc:
-      "De la ciorbă la bowl — sau importă din URL, text lipit, poză de carte sau Instagram.",
+      "De la ciorbă la bowl — importă din URL sau text lipit. Poză de carte doar cu cheie vision.",
     marketTitle: "Calendarul pieței",
     marketDesc: "Ce e proaspăt și ieftin acum în România — și ce gătești din el.",
     potTitle: "Oala comună",
@@ -262,7 +262,13 @@ export const translations = {
     syncEmpty: "Nimic salvat încă în cloud — trimite-l o dată.",
     platePhotoTitle: "Farfurie din poză",
     platePhotoDesc:
-      "Fă o poză farfurii. Cu GEMINI_API_KEY recunoaștem felurile; altfel folosim culorile + catalog RO / Open Food Facts.",
+      "Fă o poză farfurii. Fără cheie vision estimăm din culori + catalog; cu GEMINI_API_KEY recunoaștem felurile.",
+    platePhotoDescVision:
+      "Poză → recunoaștere de feluri (Gemini/OpenAI). Verifică porțiile înainte să salvezi.",
+    platePhotoDescHeuristic:
+      "Fără cheie vision: estimare din culori + catalog RO. Un hint (ex. sarmale) ajută. Recunoașterea de feluri pornește când pui GEMINI_API_KEY.",
+    visionHeuristic: "Estimare locală (fără AI)",
+    visionLive: "Recunoaștere vizuală activă",
     plateHint: "Hint: sarmale, shaormă, salată…",
     takePlatePhoto: "Fă o poză",
     uploadPlatePhoto: "Încarcă imagine",
@@ -326,6 +332,8 @@ export const translations = {
       "Titlu, ingrediente, pași — din carte, WhatsApp sau caption Instagram.",
     recipePhotoHint:
       "Carte de bucate sau screenshot. Cu GEMINI_API_KEY citim pagina; fără cheie, lipește textul.",
+    recipePhotoHintOff:
+      "Poza de carte e oprită fără cheie vision. Lipește textul rețetei.",
     importingRecipe: "Cititm rețeta…",
     recipeImported: "Rețeta e în catalog.",
     recipeErrMissing: "Pune un URL, un text sau o poză.",
@@ -400,7 +408,7 @@ export const translations = {
     add: "Add",
     recipesTitle: "Recipes with Romanian portions",
     recipesDesc:
-      "From ciorbă to bowls — or import from a URL, pasted text, cookbook photo, or Instagram.",
+      "From ciorbă to bowls — import from a URL or pasted text. Cookbook photos need a vision key.",
     marketTitle: "Market calendar",
     marketDesc: "What’s fresh and affordable in Romania now — and what to cook.",
     potTitle: "Family pot",
@@ -628,7 +636,13 @@ export const translations = {
     syncEmpty: "Nothing saved in the cloud yet — push once.",
     platePhotoTitle: "Plate from a photo",
     platePhotoDesc:
-      "Snap the plate. With GEMINI_API_KEY we recognise dishes; otherwise we use colours + the RO catalog / Open Food Facts.",
+      "Snap the plate. Without a vision key we estimate from colours + catalog; with GEMINI_API_KEY we recognise dishes.",
+    platePhotoDescVision:
+      "Photo → dish recognition (Gemini/OpenAI). Check portions before you save.",
+    platePhotoDescHeuristic:
+      "No vision key: colour + RO catalog estimate. A hint (e.g. sarmale) helps. Dish recognition starts when you set GEMINI_API_KEY.",
+    visionHeuristic: "Local estimate (no AI)",
+    visionLive: "Visual recognition on",
     plateHint: "Hint: sarmale, shawarma, salad…",
     takePlatePhoto: "Take a photo",
     uploadPlatePhoto: "Upload image",
@@ -692,6 +706,8 @@ export const translations = {
       "Title, ingredients, steps — from a book, WhatsApp, or an Instagram caption.",
     recipePhotoHint:
       "Cookbook page or screenshot. With GEMINI_API_KEY we read the page; otherwise paste the text.",
+    recipePhotoHintOff:
+      "Cookbook photos are off without a vision key. Paste the recipe text.",
     importingRecipe: "Reading the recipe…",
     recipeImported: "Recipe is in your catalog.",
     recipeErrMissing: "Add a URL, some text, or a photo.",

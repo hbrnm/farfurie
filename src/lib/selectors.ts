@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { localISO, weekISODates, weekdayKeyFromISO } from "./dates";
+import { localISO, weekISODates, weekdayKeyFromISO, shiftISO } from "./dates";
 import { dayKcalFloor } from "./goals";
 import { analyzeMetabolism } from "./metabolism";
 import { effectiveDayGoals, weekBudget } from "./week-budget";
+import { fastingProtocols } from "./activity";
 import { useFarfurieStore, type DayKey, type MealKey } from "./store";
 
 export function useWeekBudget() {
@@ -106,8 +107,37 @@ export function useFastingStatus() {
     return () => clearInterval(id);
   }, []);
   return useMemo(() => {
-    void now;
-    return useFarfurieStore.getState().fastingStatus();
+    const protocol =
+      fastingProtocols.find((p) => p.id === fastingProtocolId) ?? fastingProtocols[0];
+    if (!fastingStartedAt) {
+      return {
+        protocol,
+        active: false,
+        phase: "idle" as const,
+        elapsedMin: 0,
+        remainingMin: protocol.fastHours * 60,
+      };
+    }
+    const elapsedMin = Math.floor((now - new Date(fastingStartedAt).getTime()) / 60000);
+    const cycleMin = (protocol.fastHours + protocol.eatHours) * 60;
+    const inCycle = ((elapsedMin % cycleMin) + cycleMin) % cycleMin;
+    const fastingMin = protocol.fastHours * 60;
+    if (inCycle < fastingMin) {
+      return {
+        protocol,
+        active: true,
+        phase: "fasting" as const,
+        elapsedMin: inCycle,
+        remainingMin: fastingMin - inCycle,
+      };
+    }
+    return {
+      protocol,
+      active: true,
+      phase: "eating" as const,
+      elapsedMin: inCycle - fastingMin,
+      remainingMin: cycleMin - inCycle,
+    };
   }, [fastingProtocolId, fastingStartedAt, now]);
 }
 
@@ -118,7 +148,17 @@ export function useMealEntries(meal: MealKey) {
 
 export function useCurrentStreak() {
   const entries = useFarfurieStore((s) => s.entries);
-  return useMemo(() => useFarfurieStore.getState().currentStreak(), [entries]);
+  return useMemo(() => {
+    const days = new Set(entries.map((e) => e.date));
+    let cursor = localISO();
+    if (!days.has(cursor)) cursor = shiftISO(cursor, -1);
+    let streak = 0;
+    while (days.has(cursor)) {
+      streak += 1;
+      cursor = shiftISO(cursor, -1);
+    }
+    return streak;
+  }, [entries]);
 }
 
 export function useWeekKcal() {

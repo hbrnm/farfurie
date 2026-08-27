@@ -5,6 +5,7 @@ import { Clock, Heart, ImagePlus, ShoppingCart } from "lucide-react";
 import { recipeName, recipes, type Recipe } from "@/lib/recipes";
 import { t, type Locale, type TranslationKey } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
+import { useVisionAvailable } from "@/lib/useVisionAvailable";
 
 const ERROR_KEYS: Record<string, TranslationKey> = {
   missing_source: "recipeErrMissing",
@@ -29,6 +30,7 @@ export function RecipesGrid() {
   const toggleFavoriteRecipe = useFarfurieStore((s) => s.toggleFavoriteRecipe);
   const userRecipes = useFarfurieStore((s) => s.userRecipes);
   const addUserRecipe = useFarfurieStore((s) => s.addUserRecipe);
+  const vision = useVisionAvailable();
   const fileRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
@@ -149,31 +151,37 @@ export function RecipesGrid() {
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm text-ink-soft">{t(locale, "recipePhotoHint")}</p>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (file) void onPhoto(file);
-            }}
-          />
-          <button
-            type="button"
-            className="btn btn-ghost text-sm"
-            disabled={Boolean(busy)}
-            onClick={() => fileRef.current?.click()}
-          >
-            <ImagePlus size={14} />
-            {busy === "photo" ? t(locale, "importingRecipe") : t(locale, "importFromPhoto")}
-          </button>
-          {preview && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="" className="mt-2 h-28 rounded-2xl object-cover" />
-          )}
+          <p className="text-sm text-ink-soft">
+            {vision ? t(locale, "recipePhotoHint") : t(locale, "recipePhotoHintOff")}
+          </p>
+          {vision ? (
+            <>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void onPhoto(file);
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn-ghost text-sm"
+                disabled={Boolean(busy)}
+                onClick={() => fileRef.current?.click()}
+              >
+                <ImagePlus size={14} />
+                {busy === "photo" ? t(locale, "importingRecipe") : t(locale, "importFromPhoto")}
+              </button>
+              {preview && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={preview} alt="" className="mt-2 h-28 rounded-2xl object-cover" />
+              )}
+            </>
+          ) : null}
         </div>
         {status && (
           <p className={`text-sm font-semibold ${ok ? "text-brand" : "text-red-700"}`}>{status}</p>
