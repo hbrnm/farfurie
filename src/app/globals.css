@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --bg: #eef3ea;
-  --bg-deep: #dfe8d8;
-  --ink: #14201a;
-  --ink-soft: #3d4f45;
-  --brand: #1b5e45;
-  --brand-2: #247a58;
-  --accent: #e8a838;
-  --accent-soft: #f3d28a;
-  --surface: #fbfdf8;
-  --line: rgba(20, 32, 26, 0.1);
-  --danger: #c45c3e;
-  --good: #2f7d4a;
-  --shadow: 0 18px 50px rgba(20, 32, 26, 0.08);
+  --bg: #f8faf9;
+  --bg-deep: #f1f5f3;
+  --ink: #111827;
+  --ink-soft: #6b7280;
+  --brand: #059669;
+  --brand-2: #10b981;
+  --accent: #f59e0b;
+  --accent-soft: #fef3c7;
+  --surface: #ffffff;
+  --line: #e5e7eb;
+  --danger: #ef4444;
+  --good: #10b981;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   --radius: 1.25rem;
 }
 
@@ -30,28 +30,27 @@ html {
 body {
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #f7e7b8 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, #cfe0d0 0%, transparent 50%),
-    linear-gradient(180deg, var(--bg) 0%, #f7faf4 40%, var(--bg-deep) 100%);
+  background: var(--bg);
   min-height: 100vh;
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
 h2,
 h3,
 .display {
-  font-family: var(--font-display), Georgia, serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display), -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.025em;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 45%, white);
+  background: #d1fae5;
+  color: #065f46;
 }
 
 .surface {
-  background: color-mix(in srgb, var(--surface) 92%, white);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -63,9 +62,9 @@ h3,
   justify-content: center;
   gap: 0.5rem;
   border-radius: 999px;
-  padding: 0.85rem 1.35rem;
+  padding: 0.75rem 1.25rem;
   font-weight: 600;
-  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .btn:hover {
@@ -74,8 +73,8 @@ h3,
 
 .btn-primary {
   background: var(--brand);
-  color: #f7fbf8;
-  box-shadow: 0 10px 24px rgba(27, 94, 69, 0.28);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
 }
 
 .btn-primary:hover {
@@ -83,30 +82,33 @@ h3,
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.55);
+  background: #ffffff;
   color: var(--ink);
   border: 1px solid var(--line);
-  backdrop-filter: blur(8px);
+}
+
+.btn-ghost:hover {
+  background: #f9fafb;
 }
 
 .progress-track {
-  height: 0.55rem;
+  height: 0.5rem;
   border-radius: 999px;
-  background: rgba(20, 32, 26, 0.08);
+  background: #f3f4f6;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--brand), #3d9a6e);
-  transition: width 0.5s ease;
+  background: var(--brand);
+  transition: width 0.4s ease;
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -114,95 +116,42 @@ h3,
   }
 }
 
-@keyframes floaty {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
 .animate-rise {
-  animation: rise 0.7s ease both;
-}
-
-.animate-float {
-  animation: floaty 5s ease-in-out infinite;
-}
-
-@keyframes scanBeam {
-  0% {
-    top: 5%;
-    opacity: 0.8;
-  }
-  50% {
-    top: 85%;
-    opacity: 1;
-  }
-  100% {
-    top: 5%;
-    opacity: 0.8;
-  }
-}
-
-.animate-scan-beam {
-  animation: scanBeam 2.5s ease-in-out infinite;
-}
-
-.hero-grain {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+  animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 html.dark {
   color-scheme: dark;
-  --bg: #121a16;
-  --bg-deep: #0c1310;
-  --ink: #e8f0ea;
-  --ink-soft: #9aada2;
-  --brand: #4caf86;
-  --brand-2: #3d9a6e;
-  --accent: #e8a838;
-  --accent-soft: #c9a056;
-  --surface: #1a2420;
-  --line: rgba(232, 240, 234, 0.12);
-  --danger: #e07a5f;
-  --good: #6dbe86;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+  --bg: #0b0f12;
+  --bg-deep: #06090b;
+  --ink: #f9fafb;
+  --ink-soft: #9ca3af;
+  --brand: #10b981;
+  --brand-2: #34d399;
+  --accent: #fbbf24;
+  --accent-soft: #451a03;
+  --surface: #141a1f;
+  --line: #1f2937;
+  --danger: #f87171;
+  --good: #34d399;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 html.dark body {
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #2a2416 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, #1a2e24 0%, transparent 50%),
-    linear-gradient(180deg, var(--bg) 0%, #151c18 40%, var(--bg-deep) 100%);
+  background: var(--bg);
 }
 
 html.dark .surface {
-  background: color-mix(in srgb, var(--surface) 92%, black);
-}
-
-html.dark .bg-white,
-html.dark .bg-white\/50,
-html.dark .bg-white\/60,
-html.dark .bg-white\/70,
-html.dark .bg-white\/80,
-html.dark .hover\:bg-white:hover,
-html.dark .hover\:bg-white\/60:hover,
-html.dark .hover\:bg-white\/70:hover {
-  background-color: color-mix(in srgb, var(--surface) 78%, black) !important;
+  background: var(--surface);
+  border-color: var(--line);
 }
 
 html.dark input,
 html.dark select,
 html.dark textarea {
-  background-color: color-mix(in srgb, var(--surface) 70%, black);
+  background-color: #1f2937;
   color: var(--ink);
-}
-
-html.dark .progress-track {
-  background: rgba(232, 240, 234, 0.12);
+  border-color: #374151;
 }
 
 @media print {
