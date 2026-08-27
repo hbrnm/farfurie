@@ -7,7 +7,8 @@ import type { SubscriptionTier } from "@/domain/models";
  * `x-farfurie-tier` is a leftover client hint — not authorization.
  * Treat every request as free until a verified server-side plan exists.
  */
-export function tierFromRequest(_request: Request): SubscriptionTier {
+export function tierFromRequest(request: Request): SubscriptionTier {
+  void request;
   return "free";
 }
 

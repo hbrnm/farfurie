@@ -6,7 +6,6 @@ import { useFarfurieStore } from "@/lib/store";
 import type { FeatureId } from "@/lib/entitlements";
 
 export function Paywall({
-  feature: _feature,
   onClose,
 }: {
   feature?: FeatureId;
