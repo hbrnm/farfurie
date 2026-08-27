@@ -1,11 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { FileText, Download } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { isWeekendISO, lastNDates, localISO, weekISODates } from "@/lib/dates";
 import { foods } from "@/lib/foods";
 import { nutritionistCsv } from "@/lib/share";
-import { useBurnedToday, useCurrentStreak, useEffectiveGoals, useMetabolism, useTotals, useWeekBudget, useWeekKcal } from "@/lib/selectors";
+import { triggerHaptic } from "@/lib/haptics";
+import { PdfReportModal } from "@/components/PdfReportModal";
+import {
+  useBurnedToday,
+  useCurrentStreak,
+  useEffectiveGoals,
+  useMetabolism,
+  useTotals,
+  useWeekBudget,
+  useWeekKcal,
+} from "@/lib/selectors";
 import { useFarfurieStore } from "@/lib/store";
 
 const DRINK_IDS = new Set(foods.filter((f) => f.category === "drink").map((f) => f.id));
@@ -32,6 +45,8 @@ export function InsightsPanel() {
   const startRecovery = useFarfurieStore((s) => s.startRecovery);
   const stopRecovery = useFarfurieStore((s) => s.stopRecovery);
   const exercises = useFarfurieStore((s) => s.exerciseLogs);
+
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const proteinPct = Math.round((totals.protein / Math.max(goals.protein, 1)) * 100);
   const goalLabel = t(locale, profile.goal);
@@ -68,6 +83,7 @@ export function InsightsPanel() {
   const kgToGo = Math.round((latestWeight - targetWeightKg) * 10) / 10;
 
   const download = () => {
+    triggerHaptic("light");
     const csv = nutritionistCsv({ entries, exercises, days: 14 });
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -224,12 +240,34 @@ export function InsightsPanel() {
         </div>
       </section>
 
+      {/* Export Section with PDF & CSV */}
       <section className="surface p-5">
         <h2 className="display text-2xl">{t(locale, "exportTitle")}</h2>
         <p className="mt-2 text-sm text-ink-soft">{t(locale, "exportDesc")}</p>
-        <button type="button" className="btn btn-primary mt-4 text-sm" onClick={download}>
-          {t(locale, "downloadCsv")}
-        </button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            className="btn btn-primary text-sm shadow-sm"
+            onClick={() => {
+              triggerHaptic("medium");
+              setShowPdfModal(true);
+            }}
+          >
+            <FileText size={16} />
+            {locale === "ro" ? "Generează Raport PDF (7 / 30 Zile)" : "Generate PDF Report (7 / 30 Days)"}
+          </motion.button>
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            className="btn btn-ghost text-sm"
+            onClick={download}
+          >
+            <Download size={16} />
+            {t(locale, "downloadCsv")}
+          </motion.button>
+        </div>
       </section>
 
       <section className="surface border-accent/40 p-5">
@@ -250,6 +288,8 @@ export function InsightsPanel() {
           <p className="mt-3 text-xs text-ink-soft">{t(locale, "holidaysOn")}</p>
         )}
       </section>
+
+      {showPdfModal && <PdfReportModal onClose={() => setShowPdfModal(false)} />}
     </div>
   );
 }
