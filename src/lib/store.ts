@@ -229,7 +229,6 @@ function goalsFromProfile(profile: ProfileInput): Goals {
   return calcMacroGoals(kcal, profile.weightKg);
 }
 
-const INITIAL_GOALS = goalsFromProfile(defaultProfile);
 const TODAY = localISO();
 const YESTERDAY = shiftISO(TODAY, -1);
 
@@ -1002,6 +1001,7 @@ export const useFarfurieStore = create<State>()(
       version: 9,
       skipHydration: true,
       migrate: (persisted, version) => {
+        void version;
         const s = (persisted ?? {}) as Record<string, unknown>;
         const today = localISO();
         const stampDate = (row: Record<string, unknown>) => ({

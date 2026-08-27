@@ -36,9 +36,11 @@ function histogramGuess(buffer: Buffer): { templateId: string; confidence: numbe
   const pg = green / Math.max(samples, 1);
   const pb = brown / Math.max(samples, 1);
   const py = yellow / Math.max(samples, 1);
+  const pw = white / Math.max(samples, 1);
   if (pg > 0.22) return { templateId: "lose", confidence: Math.min(0.72, 0.4 + pg) };
   if (pb > 0.12 && py > 0.08) return { templateId: "lose", confidence: 0.48 };
   if (py > 0.18) return { templateId: "post", confidence: 0.45 };
+  if (pw > 0.35) return { templateId: "office", confidence: 0.42 };
   return { templateId: "office", confidence: 0.4 };
 }
 
