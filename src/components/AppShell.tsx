@@ -61,15 +61,26 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen pb-24 md:pb-12 bg-[var(--bg)] transition-colors duration-200">
       <OnboardingWizard />
 
-      {/* Header Unificat Modern */}
-      <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-white/80 backdrop-blur-md dark:bg-[#141a1f]/80">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+      {/* Header Unificat Modern Level Up Style */}
+      <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-white/90 backdrop-blur-md dark:bg-[#070707]/90 transition-colors">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="display text-xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400"
+              onClick={() => triggerHaptic("light")}
+              className="group flex items-center gap-2.5 transition-transform hover:scale-[1.01]"
             >
-              Farfurie
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 dark:bg-[#f13a30] text-white shadow-md transition-all group-hover:shadow-emerald-500/20 dark:group-hover:shadow-rose-500/30 -skew-x-6">
+                <span className="font-black text-xs tracking-wider">F</span>
+              </div>
+              <div className="flex flex-col leading-none">
+                <span className="display text-base font-extrabold tracking-wider text-gray-900 dark:text-white uppercase">
+                  FARFURIE
+                </span>
+                <span className="level-kicker text-[9px] text-emerald-600 dark:text-[#f13a30] tracking-[0.18em]">
+                  NUTRITION & CALORIES
+                </span>
+              </div>
             </Link>
 
             {/* Mod Sărbători Indicator Badge */}
@@ -80,10 +91,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
                 toggleHoliday();
               }}
               title={holidayMode ? "Mod Sărbători Activ (+15% Buget)" : "Activează Mod Sărbători"}
-              className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
+              className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider transition-all ${
                 holidayMode
-                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                  : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200"
+                  ? "bg-amber-500/20 text-amber-500 border border-amber-500/40 shadow-sm"
+                  : "bg-gray-100 text-gray-500 dark:bg-zinc-900 dark:text-zinc-400 border border-transparent hover:border-gray-300 dark:hover:border-zinc-700"
               }`}
             >
               <Flame size={13} className={holidayMode ? "animate-pulse text-amber-500" : ""} />

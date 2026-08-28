@@ -80,41 +80,51 @@ export function LandingPage() {
             transition={{ duration: 0.7 }}
             className="w-full max-w-2xl"
           >
-            {/* Glassmorphism Hero Box */}
-            <div className="rounded-[2.5rem] border border-white/20 bg-black/45 p-6 md:p-10 shadow-2xl backdrop-blur-md">
-              <p className="display text-4xl leading-[0.95] text-white md:text-6xl font-bold">Farfurie</p>
-              <h1 className="mt-3 display text-xl font-medium text-emerald-300 md:text-3xl">
+            {/* Glassmorphism Hero Box Level Up Style */}
+            <div className="rounded-[2.5rem] border border-white/20 bg-black/60 p-6 md:p-10 shadow-2xl backdrop-blur-md">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#f13a30]/40 bg-[#f13a30]/15 px-3 py-1 text-[10px] font-black tracking-[0.18em] text-[#f13a30] uppercase">
+                <Sparkles size={12} />
+                <span>DATA-DRIVEN NUTRITION COACHING</span>
+              </div>
+              <p className="display text-4xl leading-[0.95] text-white md:text-6xl font-extrabold tracking-tight uppercase">
+                Mănâncă cu scop.<br />
+                <em className="not-italic text-[#55dc88]">Progresează cu dovezi.</em>
+              </p>
+              <h1 className="mt-3 display text-lg font-medium text-zinc-300 md:text-2xl">
                 {t(locale, "tagline")}
               </h1>
-              <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/90 md:text-base">
+              <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 md:text-base">
                 {t(locale, "heroSupport")}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Link href="/app" className="btn btn-primary bg-emerald-500 text-black hover:bg-emerald-400 font-semibold px-6 py-3 text-base shadow-lg">
-                    {t(locale, "ctaStart")}
+                  <Link href="/app" className="btn btn-primary bg-[#55dc88] text-black hover:bg-[#42c573] font-extrabold px-7 py-3.5 text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20">
+                    {t(locale, "ctaStart")} <span>↗</span>
                   </Link>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <a href="#diferente" className="btn btn-ghost border-white/30 text-white hover:bg-white/10 px-6 py-3 text-base">
-                    {t(locale, "ctaDemo")}
+                  <a href="#diferente" className="btn btn-ghost border-white/30 text-white hover:bg-white/10 px-6 py-3.5 text-sm uppercase tracking-wider font-bold">
+                    {t(locale, "ctaDemo")} <span>↓</span>
                   </a>
                 </motion.div>
               </div>
             </div>
           </motion.div>
 
-          {/* Right Floating Card */}
+          {/* Right Floating Card Level Up Style */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25, duration: 0.7 }}
-            className="pointer-events-none absolute right-6 top-1/2 hidden w-80 -translate-y-1/2 rounded-[2rem] border border-white/25 bg-black/50 p-5 text-white shadow-2xl backdrop-blur-md lg:block"
+            className="pointer-events-none absolute right-6 top-1/2 hidden w-80 -translate-y-1/2 rounded-[2rem] border border-white/20 bg-[#0e1012]/90 p-5 text-white shadow-2xl backdrop-blur-md lg:block"
           >
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-400 font-semibold">Umple golul · AI</p>
-            <p className="mt-2 display text-2xl font-bold">312 kcal rămase</p>
-            <p className="mt-1 text-sm text-white/80">+ 28g proteină de acoperit</p>
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/10 p-3 text-sm font-medium">
+            <div className="flex items-center justify-between">
+              <p className="level-kicker text-[#f13a30]">FARFURIE GUIDANCE</p>
+              <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-mono text-zinc-400">AI REAL-TIME</span>
+            </div>
+            <p className="mt-2 display text-3xl font-extrabold">312 kcal</p>
+            <p className="mt-0.5 text-xs text-zinc-400 font-medium">+ 28g proteină de acoperit azi</p>
+            <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-semibold text-emerald-300">
               Salată cu ton și ou · 310 kcal · P 32g
             </div>
           </motion.div>
