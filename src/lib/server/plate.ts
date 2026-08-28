@@ -93,44 +93,90 @@ function parseJsonBlob(text: string): { items?: Array<Record<string, unknown>> }
   }
 }
 
+const KNOWN_FOODS_SUMMARY = foods
+  .slice(0, 50)
+  .map((f) => `${f.id}: ${f.nameRo}`)
+  .join(", ");
+
+const VISION_PROMPT = `You are an expert precision food identification and nutritional estimation AI for Romanian and European cuisine.
+
+Task: Analyze the meal photo and user context, perform spatial volume & portion weight estimation, and return a JSON breakdown of every distinct food component.
+
+Steps to perform internally:
+1. Identify dish components separately (main protein, sides, sauces, salads, bread, drinks).
+2. Estimate portion weight in grams based on visual volume, container scale (standard plate is ~24cm), and food density.
+3. Account for cooking methods and visible/implied fats (e.g. oil coating, butter, sour cream).
+4. Match items to local food IDs if applicable: ${KNOWN_FOODS_SUMMARY}
+
+Return strictly JSON matching this structure:
+{
+  "items": [
+    {
+      "nameRo": "Nume românesc al preparatului",
+      "nameEn": "English food name",
+      "grams": 150,
+      "kcal": 220,
+      "protein": 25,
+      "carbs": 10,
+      "fat": 8,
+      "confidence": 0.88,
+      "foodId": "optional-id-from-list"
+    }
+  ]
+}`;
+
 function guessesFromModel(raw: { items?: Array<Record<string, unknown>> }): PlateGuess[] {
   const out: PlateGuess[] = [];
   for (const item of raw.items ?? []) {
-    const nameRo = String(item.nameRo ?? item.name ?? "");
-    const nameEn = String(item.nameEn ?? item.name ?? nameRo);
-    const grams = Math.max(20, Math.min(600, Number(item.grams) || 120));
-    const food =
-      foods.find((f) => f.id === item.foodId) ??
+    const rawNameRo = String(item.nameRo ?? item.name ?? "").trim();
+    const rawNameEn = String(item.nameEn ?? item.name ?? rawNameRo).trim();
+    const grams = Math.max(10, Math.min(800, Math.round(Number(item.grams) || 120)));
+    
+    // Attempt database grounding against local food catalog
+    const matchedFood =
+      (item.foodId ? foods.find((f) => f.id === String(item.foodId).trim()) : null) ??
       foods.find(
         (f) =>
-          f.nameRo.toLowerCase() === nameRo.toLowerCase() ||
-          f.nameEn.toLowerCase() === nameEn.toLowerCase(),
+          f.id === rawNameRo.toLowerCase() ||
+          f.nameRo.toLowerCase() === rawNameRo.toLowerCase() ||
+          f.nameEn.toLowerCase() === rawNameEn.toLowerCase() ||
+          rawNameRo.toLowerCase().includes(f.nameRo.toLowerCase()),
       );
-    const macros = food
-      ? macrosForGrams(food, grams)
+
+    const nameRo = matchedFood ? matchedFood.nameRo : rawNameRo;
+    const nameEn = matchedFood ? matchedFood.nameEn : rawNameEn;
+    
+    // Programmatic macro grounding if food is matched in database
+    const macros = matchedFood
+      ? macrosForGrams(matchedFood, grams)
       : {
-          kcal: Math.round(Number(item.kcal) || 0),
-          protein: Number(item.protein) || 0,
-          carbs: Number(item.carbs) || 0,
-          fat: Number(item.fat) || 0,
+          kcal: Math.max(1, Math.round(Number(item.kcal) || (grams * 1.5))),
+          protein: Math.max(0, Math.round((Number(item.protein) || 0) * 10) / 10),
+          carbs: Math.max(0, Math.round((Number(item.carbs) || 0) * 10) / 10),
+          fat: Math.max(0, Math.round((Number(item.fat) || 0) * 10) / 10),
         };
-    if (!nameRo || macros.kcal <= 0) continue;
+
+    if (!nameRo || (macros.kcal <= 0 && !matchedFood)) continue;
+
+    const rawConfidence = Number(item.confidence);
+    const confidence = Math.max(
+      0.3,
+      Math.min(0.98, !isNaN(rawConfidence) ? rawConfidence : matchedFood ? 0.85 : 0.65),
+    );
+
     out.push({
       nameRo,
       nameEn,
       grams,
       macros,
-      foodId: food?.id,
-      confidence: Math.max(0.2, Math.min(0.95, Number(item.confidence) || 0.6)),
+      foodId: matchedFood?.id,
+      confidence: Math.round(confidence * 100) / 100,
     });
-    if (out.length >= 6) break;
+
+    if (out.length >= 8) break;
   }
   return out;
 }
-
-const VISION_PROMPT = `You estimate a Romanian meal from a plate photo.
-Return ONLY JSON: {"items":[{"nameRo":"...","nameEn":"...","grams":120,"kcal":200,"protein":10,"carbs":20,"fat":8,"confidence":0.7,"foodId":"optional-id"}]}
-Prefer typical RO portions (farfurie, lingură, pahar). foodId if it matches: sarmale, pui-piept, mamaliga, salata-varza, shaorma-pui, covrig, oua, iaurt-napolact, ton-scandia, ciorba-burta, mici.`;
 
 async function geminiEstimate(base64: string, mime: string, hint: string) {
   const key = process.env.GEMINI_API_KEY;
@@ -143,7 +189,7 @@ async function geminiEstimate(base64: string, mime: string, hint: string) {
         {
           role: "user",
           parts: [
-            { text: `${VISION_PROMPT}${hint ? `\nUser hint: ${hint}` : ""}` },
+            { text: `${VISION_PROMPT}${hint ? `\nUser hint / context: ${hint}` : ""}` },
             {
               inlineData: {
                 mimeType: mime,
@@ -154,7 +200,7 @@ async function geminiEstimate(base64: string, mime: string, hint: string) {
         },
       ],
       config: {
-        temperature: 0.2,
+        temperature: 0.1,
       },
     });
 
@@ -180,12 +226,12 @@ async function openaiEstimate(base64: string, mime: string, hint: string) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        temperature: 0.2,
+        temperature: 0.1,
         messages: [
           {
             role: "user",
             content: [
-              { type: "text", text: `${VISION_PROMPT}${hint ? `\nUser hint: ${hint}` : ""}` },
+              { type: "text", text: `${VISION_PROMPT}${hint ? `\nUser hint / context: ${hint}` : ""}` },
               { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
             ],
           },
@@ -219,8 +265,8 @@ export async function estimatePlate(input: {
     return {
       provider: "gemini",
       items: gemini,
-      noteRo: "Estimare din poză (Gemini 2.5 Flash).",
-      noteEn: "Estimate from the photo (Gemini 2.5 Flash).",
+      noteRo: "Identificare și estimare precisă AI (Gemini 2.5 Vision).",
+      noteEn: "Precise AI vision identification & portion estimate (Gemini 2.5 Flash).",
     };
   }
   const openai = await openaiEstimate(input.imageBase64.replace(/^data:[^;]+;base64,/, ""), mime, hint);
@@ -228,8 +274,8 @@ export async function estimatePlate(input: {
     return {
       provider: "openai",
       items: openai,
-      noteRo: "Estimare din poză (OpenAI).",
-      noteEn: "Estimate from the photo (OpenAI).",
+      noteRo: "Identificare și estimare precisă AI (OpenAI Vision).",
+      noteEn: "Precise AI vision identification & portion estimate (OpenAI Vision).",
     };
   }
 
@@ -238,8 +284,8 @@ export async function estimatePlate(input: {
     return {
       provider: "heuristic",
       items: hinted,
-      noteRo: "Fără cheie vision: am folosit textul tău + Open Food Facts / catalogul RO.",
-      noteEn: "No vision key: used your hint + Open Food Facts / the RO catalog.",
+      noteRo: "Fără cheie AI Vision: s-a folosit indiciul tău + căutarea în catalogul de alimente.",
+      noteEn: "No AI vision key: used your hint + food catalog search.",
     };
   }
 
@@ -255,7 +301,7 @@ export async function estimatePlate(input: {
       grams: row.grams,
       macros: macrosForGrams(food, row.grams),
       foodId: food.id,
-      confidence: hist.confidence,
+      confidence: 0.35,
     });
   }
 
@@ -263,8 +309,8 @@ export async function estimatePlate(input: {
     provider: "heuristic",
     items,
     noteRo:
-      "Estimare locală din culorile pozei + farfurie RO. Pentru recunoaștere de feluri, pune GEMINI_API_KEY.",
+      "Atenție: GEMINI_API_KEY nu este configurată pe server. Pentru identificare foto precisă, adaugă cheia API în file-ul .env.local.",
     noteEn:
-      "Local estimate from photo colors + a RO plate template. For dish recognition, set GEMINI_API_KEY.",
+      "Warning: GEMINI_API_KEY is not configured on server. For precise photo AI recognition, add the API key to .env.local.",
   };
 }

@@ -2,17 +2,42 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Camera, Home, UserRound } from "lucide-react";
+import {
+  BookOpen,
+  Bot,
+  Calendar,
+  Camera,
+  ChartLine,
+  Flame,
+  Home,
+  Moon,
+  ShoppingBag,
+  ShoppingCart,
+  Sun,
+  Soup,
+  UserRound,
+  ScanBarcode,
+} from "lucide-react";
 import { ClientOnly } from "@/components/ClientOnly";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { triggerHaptic } from "@/lib/haptics";
-import { t } from "@/lib/i18n";
 import { useFarfurieStore } from "@/lib/store";
 
-const links = [
-  { href: "/app", label: "Jurnal", icon: Home },
-  { href: "/app/plate", label: "Farfurie AI", icon: Camera },
-  { href: "/app/profile", label: "Profil", icon: UserRound },
+const mainNavLinks = [
+  { href: "/app", labelRo: "Jurnal", labelEn: "Diary", icon: Home },
+  { href: "/app/recipes", labelRo: "Rețete", labelEn: "Recipes", icon: BookOpen },
+  { href: "/app/insights", labelRo: "Progres", labelEn: "Progress", icon: ChartLine },
+  { href: "/app/coach", labelRo: "Antrenor AI", labelEn: "AI Coach", icon: Bot },
+  { href: "/app/profile", labelRo: "Profil", labelEn: "Profile", icon: UserRound },
+];
+
+const secondaryNavLinks = [
+  { href: "/app/pot", labelRo: "Oala Comună", labelEn: "Family Pot", icon: Soup },
+  { href: "/app/plan", labelRo: "Plan săptămânal", labelEn: "Meal Plan", icon: Calendar },
+  { href: "/app/list", labelRo: "Cumpărături", labelEn: "Shopping List", icon: ShoppingCart },
+  { href: "/app/market", labelRo: "Piață & Preț", labelEn: "Market & Prices", icon: ShoppingBag },
+  { href: "/app/scan", labelRo: "Scaner Coduri", labelEn: "Barcode Scan", icon: ScanBarcode },
+  { href: "/app/plate", labelRo: "Foto Farfurie", labelEn: "Plate Vision", icon: Camera },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -27,79 +52,151 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const locale = useFarfurieStore((s) => s.locale);
   const setLocale = useFarfurieStore((s) => s.setLocale);
+  const theme = useFarfurieStore((s) => s.theme);
+  const toggleTheme = useFarfurieStore((s) => s.toggleTheme);
+  const holidayMode = useFarfurieStore((s) => s.holidayMode);
+  const toggleHoliday = useFarfurieStore((s) => s.toggleHoliday);
 
   return (
-    <div className="min-h-screen pb-24 md:pb-10 bg-[var(--bg)]">
+    <div className="min-h-screen pb-24 md:pb-12 bg-[var(--bg)] transition-colors duration-200">
       <OnboardingWizard />
 
-      {/* Clean Ultra-Minimal Header */}
+      {/* Header Unificat Modern */}
       <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-white/80 backdrop-blur-md dark:bg-[#141a1f]/80">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3.5">
-          <Link href="/" className="display text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Farfurie
-          </Link>
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="display text-xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400"
+            >
+              Farfurie
+            </Link>
 
-          {/* Desktop Navigation (3 Clean Tabs) */}
+            {/* Mod Sărbători Indicator Badge */}
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic("medium");
+                toggleHoliday();
+              }}
+              title={holidayMode ? "Mod Sărbători Activ (+15% Buget)" : "Activează Mod Sărbători"}
+              className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
+                holidayMode
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                  : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200"
+              }`}
+            >
+              <Flame size={13} className={holidayMode ? "animate-pulse text-amber-500" : ""} />
+              <span>{holidayMode ? "Sărbători (+15%)" : "Mod Sărbători"}</span>
+            </button>
+          </div>
+
+          {/* Desktop Primary Navigation */}
           <nav className="hidden items-center gap-1 md:flex">
-            {links.map(({ href, label, icon: Icon }) => {
+            {mainNavLinks.map(({ href, labelRo, labelEn, icon: Icon }) => {
               const active = pathname === href || (href !== "/app" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
                   href={href}
                   onClick={() => triggerHaptic("light")}
-                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
                     active
-                      ? "bg-emerald-600 text-white"
+                      ? "bg-emerald-600 text-white shadow-sm"
                       : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                   }`}
                 >
-                  <Icon size={16} />
-                  {label}
+                  <Icon size={15} />
+                  {locale === "ro" ? labelRo : labelEn}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Language Switcher */}
-          <div className="flex overflow-hidden rounded-full border border-gray-200 text-xs font-semibold dark:border-gray-700">
+          {/* Controls: Theme & Language */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              className={`px-2.5 py-1 transition-colors ${locale === "ro" ? "bg-emerald-600 text-white" : "text-gray-600 dark:text-gray-400"}`}
-              onClick={() => setLocale("ro")}
+              onClick={toggleTheme}
+              className="rounded-full p-1.5 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              title="Toggle Theme"
             >
-              RO
+              {theme === "dark" ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} />}
             </button>
-            <button
-              type="button"
-              className={`px-2.5 py-1 transition-colors ${locale === "en" ? "bg-emerald-600 text-white" : "text-gray-600 dark:text-gray-400"}`}
-              onClick={() => setLocale("en")}
-            >
-              EN
-            </button>
+
+            <div className="flex overflow-hidden rounded-full border border-gray-200 text-xs font-semibold dark:border-gray-700">
+              <button
+                type="button"
+                className={`px-2.5 py-1 transition-colors ${
+                  locale === "ro"
+                    ? "bg-emerald-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                }`}
+                onClick={() => setLocale("ro")}
+              >
+                RO
+              </button>
+              <button
+                type="button"
+                className={`px-2.5 py-1 transition-colors ${
+                  locale === "en"
+                    ? "bg-emerald-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                }`}
+                onClick={() => setLocale("en")}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Secondary Scrollable Quick-Feature Bar */}
+        <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50/70 dark:bg-[#101519]/70 backdrop-blur-sm overflow-x-auto no-scrollbar">
+          <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-1.5 text-xs font-medium">
+            {secondaryNavLinks.map(({ href, labelRo, labelEn, icon: Icon }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => triggerHaptic("light")}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 transition-colors ${
+                    active
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold"
+                      : "text-gray-600 hover:bg-gray-200/60 dark:text-gray-400 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <Icon size={13} />
+                  <span>{locale === "ro" ? labelRo : labelEn}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
 
-      {/* Minimal Floating Bottom Bar for Mobile (3 Core Tabs) */}
-      <nav className="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-sm md:hidden">
-        <div className="flex items-center justify-around rounded-full border border-gray-200 bg-white/90 p-2 shadow-lg backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/90">
-          {links.map(({ href, label, icon: Icon }) => {
+      {/* Modern Floating Bottom Navigation Bar for Mobile */}
+      <nav className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-md md:hidden">
+        <div className="flex items-center justify-around rounded-3xl border border-gray-200/80 bg-white/90 p-2 shadow-xl backdrop-blur-xl dark:border-gray-800/80 dark:bg-gray-900/90">
+          {mainNavLinks.map(({ href, labelRo, labelEn, icon: Icon }) => {
             const active = pathname === href || (href !== "/app" && pathname.startsWith(href));
             return (
               <Link
                 key={href}
                 href={href}
                 onClick={() => triggerHaptic("light")}
-                className={`flex flex-col items-center px-4 py-1.5 text-[11px] font-semibold transition-colors ${
-                  active ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-gray-500 hover:text-gray-900 dark:text-gray-400"
+                className={`flex flex-col items-center px-3 py-1 text-[10px] font-semibold transition-colors ${
+                  active
+                    ? "text-emerald-600 dark:text-emerald-400 font-bold"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400"
                 }`}
               >
-                <Icon size={20} />
-                <span className="mt-0.5">{label}</span>
+                <Icon size={19} />
+                <span className="mt-0.5">{locale === "ro" ? labelRo : labelEn}</span>
               </Link>
             );
           })}
@@ -108,3 +205,4 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

@@ -133,12 +133,17 @@ export function PlatePhotoBoard() {
           ))}
         </div>
 
-        <input
-          value={hint}
-          onChange={(e) => setHint(e.target.value)}
-          placeholder={t(locale, "plateHint")}
-          className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+        <div>
+          <input
+            value={hint}
+            onChange={(e) => setHint(e.target.value)}
+            placeholder={t(locale, "plateHint")}
+            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          />
+          <p className="mt-1.5 text-xs text-ink-soft italic">
+            💡 {locale === "ro" ? "Sfat: scrie dacă preparatul conține grăsimi sau sosuri (ex. gătit cu 1 lingură ulei, cu smântână 20%)." : "Tip: mention cooking fats or hidden sauces (e.g. cooked with 1 tbsp oil, sour cream)."}
+          </p>
+        </div>
 
         <input
           ref={fileRef}
@@ -178,7 +183,7 @@ export function PlatePhotoBoard() {
           </motion.button>
         </div>
 
-        {/* Futuristic Camera HUD Frame (Inspired by Mockups 3 & 4) */}
+        {/* Futuristic Camera HUD Frame */}
         {preview && (
           <div className="relative overflow-hidden rounded-3xl border-2 border-emerald-500/40 bg-black shadow-xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -195,13 +200,19 @@ export function PlatePhotoBoard() {
             {/* HUD Status Overlay */}
             <div className="absolute top-3 left-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
               <ScanLine size={14} className="text-emerald-400 animate-pulse" />
-              {busy ? "Analiză Gemini AI în curs..." : "Detectat"}
+              {busy ? "Analiză Gemini AI..." : "Detectat"}
             </div>
 
             {result && (
               <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-black shadow-lg">
                 <CheckCircle2 size={14} />
-                Încredere 98%
+                Încredere{" "}
+                {Math.round(
+                  (result.items.reduce((sum, item) => sum + (item.confidence || 0.7), 0) /
+                    Math.max(1, result.items.length)) *
+                    100,
+                )}
+                %
               </div>
             )}
           </div>
@@ -230,39 +241,103 @@ export function PlatePhotoBoard() {
             {result.items.map((item, i) => (
               <li
                 key={`${item.nameEn}-${i}`}
-                className="flex items-center justify-between rounded-2xl border border-[var(--line)] bg-white/80 p-3.5 shadow-xs"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/80 p-3.5 shadow-xs"
               >
                 <div>
-                  <p className="text-sm font-bold text-gray-900">
-                    {locale === "ro" ? item.nameRo : item.nameEn}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-gray-900">
+                      {locale === "ro" ? item.nameRo : item.nameEn}
+                    </p>
+                    <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">
+                      {Math.round((item.confidence || 0.7) * 100)}% conf
+                    </span>
+                  </div>
                   <div className="mt-1 flex flex-wrap gap-2 text-xs font-semibold">
                     <span className="text-emerald-700">{item.macros.kcal} kcal</span>
                     <span className="text-amber-700">P {item.macros.protein}g</span>
                     <span className="text-blue-700">C {item.macros.carbs}g</span>
                     <span className="text-rose-700">F {item.macros.fat}g</span>
-                    <span className="text-ink-soft">({item.grams}g)</span>
                   </div>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  type="button"
-                  className="btn btn-ghost !px-3 !py-1.5 text-xs font-semibold"
-                  onClick={() => {
-                    triggerHaptic("light");
-                    if (item.foodId) addFoodToMeal(item.foodId, meal, item.grams);
-                    else
-                      addEntry({
-                        meal,
-                        nameRo: item.nameRo,
-                        nameEn: item.nameEn,
-                        grams: item.grams,
-                        macros: item.macros,
-                      });
-                  }}
-                >
-                  {t(locale, "add")}
-                </motion.button>
+
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  {/* Gram adjustment controls */}
+                  <div className="flex items-center rounded-xl border border-[var(--line)] bg-gray-50 p-1">
+                    <button
+                      type="button"
+                      className="px-2 py-0.5 text-xs font-bold text-gray-600 hover:text-black"
+                      onClick={() => {
+                        triggerHaptic("light");
+                        const newGrams = Math.max(10, item.grams - 25);
+                        const scale = newGrams / (item.grams || 1);
+                        const updated = result.items.map((it, idx) =>
+                          idx === i
+                            ? {
+                                ...it,
+                                grams: newGrams,
+                                macros: {
+                                  kcal: Math.round(it.macros.kcal * scale),
+                                  protein: Math.round(it.macros.protein * scale * 10) / 10,
+                                  carbs: Math.round(it.macros.carbs * scale * 10) / 10,
+                                  fat: Math.round(it.macros.fat * scale * 10) / 10,
+                                },
+                              }
+                            : it,
+                        );
+                        setResult({ ...result, items: updated });
+                      }}
+                    >
+                      -25g
+                    </button>
+                    <span className="px-2 text-xs font-extrabold text-gray-900">{item.grams}g</span>
+                    <button
+                      type="button"
+                      className="px-2 py-0.5 text-xs font-bold text-gray-600 hover:text-black"
+                      onClick={() => {
+                        triggerHaptic("light");
+                        const newGrams = item.grams + 25;
+                        const scale = newGrams / (item.grams || 1);
+                        const updated = result.items.map((it, idx) =>
+                          idx === i
+                            ? {
+                                ...it,
+                                grams: newGrams,
+                                macros: {
+                                  kcal: Math.round(it.macros.kcal * scale),
+                                  protein: Math.round(it.macros.protein * scale * 10) / 10,
+                                  carbs: Math.round(it.macros.carbs * scale * 10) / 10,
+                                  fat: Math.round(it.macros.fat * scale * 10) / 10,
+                                },
+                              }
+                            : it,
+                        );
+                        setResult({ ...result, items: updated });
+                      }}
+                    >
+                      +25g
+                    </button>
+                  </div>
+
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    type="button"
+                    className="btn btn-ghost !px-3 !py-1.5 text-xs font-semibold"
+                    onClick={() => {
+                      triggerHaptic("light");
+                      if (item.foodId) addFoodToMeal(item.foodId, meal, item.grams);
+                      else
+                        addEntry({
+                          meal,
+                          nameRo: item.nameRo,
+                          nameEn: item.nameEn,
+                          grams: item.grams,
+                          macros: item.macros,
+                        });
+                    }}
+                  >
+                    {t(locale, "add")}
+                  </motion.button>
+                </div>
               </li>
             ))}
           </ul>
