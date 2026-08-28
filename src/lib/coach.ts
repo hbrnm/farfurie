@@ -44,8 +44,8 @@ export function coachReply(input: {
     return {
       title: ro ? "Mod Sărbători, fără vinovăție" : "Holiday mode, no guilt",
       body: ro
-        ? "Bugetul e deja +15%. Alege o farfurie, nu trei. A doua zi: proteină (ouă, ton Scandia, pui Pilos) + 30 min plimbare. Nu sări mese."
-        : "Budget is already +15%. One plate, not three. Next day: protein (eggs, Scandia tuna, Pilos chicken) + a 30 min walk. Don’t skip meals.",
+        ? "Bugetul e deja +15%. Alege o farfurie, nu trei. A doua zi: proteină (ouă, ton, pui la grătar) + 30 min plimbare. Nu sări mese."
+        : "Budget is already +15%. One plate, not three. Next day: protein (eggs, tuna, grilled chicken) + a 30 min walk. Don’t skip meals.",
       tips: [
         ro ? "Salata de varză lângă sarmale taie densitatea." : "Cabbage salad next to sarmale cuts density.",
         ro ? "Porția ta din oala comună, nu „încă o lingură”." : "Your family-pot share, not one more spoon.",
@@ -60,8 +60,8 @@ export function coachReply(input: {
         ? "Fără deficit agresiv. Ținta: proteina zilnică + apă + o plimbare. Caloriile revin la normal, nu la 1200."
         : "No crash deficit. Hit daily protein + water + a walk. Calories back to normal — not 1200.",
       tips: [
-        ro ? "Mic dejun: ouă + iaurt Napolact." : "Breakfast: eggs + Napolact yogurt.",
-        ro ? "Prânz: piept de pui Pilos + salată." : "Lunch: Pilos chicken + salad.",
+        ro ? "Mic dejun: ouă + iaurt natural." : "Breakfast: eggs + natural yogurt.",
+        ro ? "Prânz: piept de pui + salată." : "Lunch: chicken breast + salad.",
       ],
     };
   }

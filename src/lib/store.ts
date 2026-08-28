@@ -268,8 +268,8 @@ function buildDemoHistory() {
       macros: { kcal: 610, protein: 28, carbs: 54, fat: 28 },
     },
     {
-      nameRo: "Salată cu ton Scandia",
-      nameEn: "Scandia tuna salad",
+      nameRo: "Salată cu ton",
+      nameEn: "Tuna salad",
       macros: { kcal: 380, protein: 36, carbs: 18, fat: 16 },
     },
   ];
@@ -289,8 +289,8 @@ function buildDemoHistory() {
         id: `seed-${date}-b`,
         date,
         meal: "breakfast",
-        nameRo: "Ovăz cu iaurt Napolact",
-        nameEn: "Oats with Napolact yogurt",
+        nameRo: "Ovăz cu iaurt natural",
+        nameEn: "Oats with natural yogurt",
         macros: { kcal: 340 + jitter, protein: 14, carbs: 52, fat: 9 },
         createdAt: `${date}T07:30:00.000Z`,
       },
@@ -355,8 +355,8 @@ const storeCreator: StateCreator<State> = (set, get) => ({
           items: [
             {
               meal: "lunch",
-              nameRo: "Conservă ton Scandia",
-              nameEn: "Scandia tuna",
+              nameRo: "Conservă ton în suc propriu",
+              nameEn: "Tuna in brine",
               macros: { kcal: 120, protein: 27.6, carbs: 0, fat: 1.2 },
             },
             {
@@ -388,8 +388,8 @@ const storeCreator: StateCreator<State> = (set, get) => ({
       shopping: [
         {
           id: "seed-shop-1",
-          nameRo: "150g iaurt Napolact",
-          nameEn: "150g Napolact yogurt",
+          nameRo: "150g iaurt natural",
+          nameEn: "150g natural yogurt",
           checked: false,
           fromRecipeId: "ovaz-napolact",
         },
@@ -410,8 +410,8 @@ const storeCreator: StateCreator<State> = (set, get) => ({
           id: "seed-1",
           date: TODAY,
           meal: "breakfast",
-          nameRo: "Ovăz cu iaurt Napolact și mere",
-          nameEn: "Oats with Napolact yogurt and apple",
+          nameRo: "Ovăz cu iaurt natural și mere",
+          nameEn: "Oats with natural yogurt and apple",
           macros: { kcal: 340, protein: 14, carbs: 52, fat: 9 },
           createdAt: new Date().toISOString(),
         },

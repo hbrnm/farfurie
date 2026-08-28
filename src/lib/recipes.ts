@@ -23,8 +23,8 @@ export const recipes: Recipe[] = [
   // ==========================================
   {
     id: "ovaz-napolact",
-    nameRo: "Ovăz proteic cu iaurt Napolact și măr",
-    nameEn: "Protein oats with Napolact yogurt & apple",
+    nameRo: "Ovăz proteic cu iaurt natural și măr",
+    nameEn: "Protein oats with natural yogurt & apple",
     minutes: 8,
     servings: 1,
     tags: ["mic-dejun", "rapid", "ieftin", "proteina"],
@@ -32,13 +32,13 @@ export const recipes: Recipe[] = [
     perServing: { kcal: 340, protein: 16, carbs: 52, fat: 8 },
     ingredientsRo: [
       "50g fulgi de ovăz fini",
-      "150g iaurt natural Napolact 3.5%",
+      "150g iaurt natural 3.5%",
       "1 măr Ionatan ras",
       "1 linguriță miere, scorțișoară",
     ],
     ingredientsEn: [
       "50g fine oat flakes",
-      "150g Napolact natural yogurt 3.5%",
+      "150g natural yogurt 3.5%",
       "1 grated red apple",
       "1 tsp honey, cinnamon",
     ],
@@ -707,20 +707,20 @@ export const recipes: Recipe[] = [
   },
   {
     id: "salata-ton",
-    nameRo: "Salată proteică cu ton Scandia și ou",
-    nameEn: "Protein salad with Scandia tuna & egg",
+    nameRo: "Salată proteică cu ton și ou",
+    nameEn: "Protein salad with tuna & egg",
     minutes: 10,
     servings: 1,
     tags: ["pranz", "proteina", "birou", "rapid"],
     perServing: { kcal: 310, protein: 32, carbs: 12, fat: 14 },
     ingredientsRo: [
-      "1 conservă ton Scandia în suc propriu",
+      "1 conservă ton în suc propriu",
       "1 ou fiert tare",
       "mix salată verde, castravete, porumb",
       "1 lingură ulei de măsline",
     ],
     ingredientsEn: [
-      "1 can Scandia tuna in brine",
+      "1 can tuna in brine",
       "1 hard-boiled egg",
       "salad greens, cucumber, sweetcorn",
       "1 tbsp olive oil",

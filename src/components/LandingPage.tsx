@@ -115,7 +115,7 @@ export function LandingPage() {
             <p className="mt-2 display text-2xl font-bold">312 kcal rămase</p>
             <p className="mt-1 text-sm text-white/80">+ 28g proteină de acoperit</p>
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/10 p-3 text-sm font-medium">
-              Salată cu ton Scandia · 310 kcal · P 32g
+              Salată cu ton și ou · 310 kcal · P 32g
             </div>
           </motion.div>
         </div>
