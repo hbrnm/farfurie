@@ -192,7 +192,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
       {/* Modern Floating Bottom Navigation Bar for Mobile */}
       <nav className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-md md:hidden">
-        <div className="flex items-center justify-around rounded-3xl border border-gray-200/80 bg-white/90 p-2 shadow-xl backdrop-blur-xl dark:border-gray-800/80 dark:bg-gray-900/90">
+        <div className="flex items-center justify-around rounded-3xl border border-gray-200/80 bg-white/90 p-2 shadow-2xl backdrop-blur-xl dark:border-zinc-800 dark:bg-[#121214]/95">
           {mainNavLinks.map(({ href, labelRo, labelEn, icon: Icon }) => {
             const active = pathname === href || (href !== "/app" && pathname.startsWith(href));
             return (
@@ -200,10 +200,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 onClick={() => triggerHaptic("light")}
-                className={`flex flex-col items-center px-3 py-1 text-[10px] font-semibold transition-colors ${
+                className={`flex flex-col items-center px-3 py-1 text-[10px] font-bold transition-colors ${
                   active
-                    ? "text-emerald-600 dark:text-emerald-400 font-bold"
-                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400"
+                    ? "text-emerald-600 dark:text-[#55dc88] font-extrabold"
+                    : "text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200"
                 }`}
               >
                 <Icon size={19} />

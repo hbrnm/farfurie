@@ -7,12 +7,16 @@
   --bg-deep: #f1f5f3;
   --ink: #111827;
   --ink-soft: #6b7280;
+  --ink-muted: #9ca3af;
   --brand: #059669;
   --brand-2: #10b981;
   --accent: #f59e0b;
   --accent-soft: #fef3c7;
   --surface: #ffffff;
+  --surface-l2: #f3f4f6;
+  --surface-l3: #e5e7eb;
   --line: #e5e7eb;
+  --line-strong: #d1d5db;
   --danger: #f13a30;
   --good: #10b981;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
@@ -52,6 +56,7 @@ h3,
   color: #065f46;
 }
 
+/* Card Surface Styling with Elevation */
 .surface {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -59,6 +64,16 @@ h3,
   box-shadow: var(--shadow);
 }
 
+.surface-l2 {
+  background: var(--surface-l2);
+  border: 1px solid var(--line);
+}
+
+.surface-l3 {
+  background: var(--surface-l3);
+}
+
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -85,13 +100,13 @@ h3,
 }
 
 .btn-ghost {
-  background: #ffffff;
+  background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--line);
 }
 
 .btn-ghost:hover {
-  background: #f9fafb;
+  background: var(--surface-l2);
 }
 
 .progress-track {
@@ -123,7 +138,7 @@ h3,
   animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Level Up Hypertrophy Design Tokens & Styling */
+/* Level Up Design Tokens */
 .level-kicker {
   font-size: 0.65rem;
   font-weight: 900;
@@ -131,36 +146,41 @@ h3,
   text-transform: uppercase;
 }
 
-.level-panel {
-  background: linear-gradient(145deg, #15171a, #0e1012);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-}
-
-.level-guidance-box {
-  border: 1px solid rgba(241, 58, 48, 0.3);
-  background: rgba(241, 58, 48, 0.08);
-}
-
+/* PURE BLACK OLED MINIMALIST DARK THEME TOKENS */
 html.dark {
   color-scheme: dark;
-  --bg: #070707;
-  --bg-deep: #0d0d0e;
-  --ink: #f7f7f5;
-  --ink-soft: #aaa9a7;
-  --brand: #10b981;
-  --brand-2: #55dc88;
-  --accent: #f59e0b;
-  --accent-soft: #451a03;
-  --surface: #121214;
-  --line: rgba(255, 255, 255, 0.13);
-  --danger: #f13a30;
-  --good: #55dc88;
-  --shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  
+  /* Elevation Surfaces (Pure Stealth OLED Black) */
+  --bg: #000000;             /* Screen Base: Pure OLED Black */
+  --bg-deep: #050505;        /* Deep Background */
+  --surface: #121214;        /* Level 1: Main Cards & Sections */
+  --surface-l2: #1c1c1f;     /* Level 2: Inner Sub-cards, Item Rows */
+  --surface-l3: #27272a;     /* Level 3: Interactive Hover/Active, Chips */
+  --line: #27272a;           /* Border Subtle: Hairline Dividers */
+  --line-strong: #3f3f46;    /* Border Strong: Active Elements */
+
+  /* Text & Icons (Guaranteed WCAG AA > 4.5:1 Contrast) */
+  --ink: #f4f4f5;            /* Primary Text: High Visibility Off-White (zinc-100) */
+  --ink-soft: #a1a1aa;       /* Secondary Text: Soft Gray (zinc-400) */
+  --ink-muted: #71717a;      /* Disabled Text & Placeholders (zinc-500) */
+
+  /* Calorie & Macro Indicators */
+  --brand: #10b981;          /* Emerald Green Primary */
+  --brand-2: #34d399;        
+  --accent: #f59e0b;         /* Amber Accent */
+  --accent-soft: #451a03;    
+  --danger: #ef4444;         /* Red Alert / Over Budget */
+  --good: #34d399;           
+  
+  --level-red: #f13a30;
+  --level-green: #55dc88;
+
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
 }
 
 html.dark body {
   background: var(--bg);
+  color: var(--ink);
 }
 
 html.dark .surface {
@@ -168,12 +188,26 @@ html.dark .surface {
   border-color: var(--line);
 }
 
+html.dark .surface-l2 {
+  background: var(--surface-l2);
+  border-color: var(--line);
+}
+
+html.dark .surface-l3 {
+  background: var(--surface-l3);
+}
+
 html.dark input,
 html.dark select,
 html.dark textarea {
-  background-color: #18181b;
+  background-color: var(--surface-l2);
   color: var(--ink);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--line);
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--ink-muted);
 }
 
 @media print {

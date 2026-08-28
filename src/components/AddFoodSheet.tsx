@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Mic, ScanBarcode, X } from "lucide-react";
+import { Mic, ScanBarcode, Search, X } from "lucide-react";
 import {
   foodName,
   foodUnit,
@@ -107,23 +107,23 @@ export function AddFoodSheet({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-black/35 p-0 md:place-items-center md:p-6">
-      <div className="surface max-h-[90vh] w-full max-w-lg overflow-auto rounded-t-3xl p-5 md:rounded-3xl">
+    <div className="fixed inset-0 z-50 grid place-items-end bg-black/60 p-0 md:place-items-center md:p-6 backdrop-blur-sm">
+      <div className="surface max-h-[90vh] w-full max-w-lg overflow-auto rounded-t-3xl p-5 md:rounded-3xl dark:bg-[#121214] dark:border-zinc-800 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="display text-2xl">
+          <h3 className="display text-2xl font-extrabold text-gray-900 dark:text-zinc-100">
             {t(locale, "addFood")} · {t(locale, meal)}
           </h3>
-          <button type="button" className="rounded-full p-2 hover:bg-white" onClick={onClose}>
+          <button type="button" className="rounded-full p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
 
-        <label className="mb-3 flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-white px-3 py-2">
-          <ScanBarcode size={16} className="text-brand" />
+        <label className="mb-3 flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-white dark:bg-[#1c1c1f] dark:border-zinc-800 px-3 py-2">
+          <ScanBarcode size={16} className="text-emerald-500 dark:text-[#55dc88]" />
           <input
             inputMode="numeric"
             placeholder={t(locale, "barcode")}
-            className="w-full bg-transparent text-sm outline-none"
+            className="w-full bg-transparent text-sm outline-none text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
             onKeyDown={(e) => {
               if (e.key === "Enter") applyBarcode((e.target as HTMLInputElement).value);
             }}
@@ -132,15 +132,15 @@ export function AddFoodSheet({
             }}
           />
         </label>
-        <p className="mb-3 text-xs text-ink-soft">
+        <p className="mb-3 text-xs text-gray-500 dark:text-zinc-400">
           {barcodeMsg || t(locale, "barcodeDemo")}{" "}
-          <Link href="/app/scan" className="font-semibold text-brand">
+          <Link href="/app/scan" className="font-semibold text-emerald-600 dark:text-[#55dc88]">
             {t(locale, "navScan")}
           </Link>
         </p>
 
-        <label className="mb-3 flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-white px-3 py-2">
-          <ScanBarcode size={16} className="text-brand" />
+        <label className="mb-3 flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-white dark:bg-[#1c1c1f] dark:border-zinc-800 px-3 py-2">
+          <Search size={16} className="text-emerald-500 dark:text-[#55dc88]" />
           <input
             value={query}
             onChange={(e) => {
@@ -156,7 +156,7 @@ export function AddFoodSheet({
               }
             }}
             placeholder={t(locale, "searchFood")}
-            className="w-full bg-transparent text-sm outline-none"
+            className="w-full bg-transparent text-sm outline-none text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
           />
           <button
             type="button"
@@ -316,27 +316,27 @@ export function AddFoodSheet({
             <li key={food.id}>
               <button
                 type="button"
-                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/80 px-3 py-3 text-left hover:border-brand/40"
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/80 dark:bg-[#1c1c1f] dark:border-zinc-800 px-3 py-3 text-left hover:border-emerald-500/40 transition-colors"
                 onClick={() => {
                   setPicked(food);
                   setGrams(food.defaultGrams);
                 }}
               >
                 <div>
-                  <p className="text-sm font-semibold">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
                     {foodName(food, locale)}
                     {food.brand ? (
-                      <span className="ml-2 text-xs font-medium text-ink-soft">{food.brand}</span>
+                      <span className="ml-2 text-xs font-medium text-gray-500 dark:text-zinc-400">{food.brand}</span>
                     ) : null}
                   </p>
-                  <p className="text-xs text-ink-soft">
+                  <p className="text-xs text-gray-500 dark:text-zinc-400">
                     {foodUnit(food, locale)} · {food.defaultGrams}g
                     {pricePer20gProtein(food) != null
                       ? ` · ${pricePer20gProtein(food)} ${t(locale, "priceProteinShort")}`
                       : ""}
                   </p>
                 </div>
-                <span className="text-sm font-semibold text-brand">
+                <span className="text-sm font-bold text-emerald-600 dark:text-[#55dc88] font-mono">
                   {Math.round((food.per100g.kcal * food.defaultGrams) / 100)} kcal
                 </span>
               </button>
@@ -345,7 +345,7 @@ export function AddFoodSheet({
         </ul>
         {offHits.filter((f) => !results.some((r) => r.ean && r.ean === f.ean)).length > 0 && (
           <div className="mt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+            <p className="mb-2 level-kicker text-gray-500 dark:text-zinc-400">
               Open Food Facts
             </p>
             <ul className="space-y-2">
@@ -355,7 +355,7 @@ export function AddFoodSheet({
                   <li key={food.id}>
                     <button
                       type="button"
-                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-brand/20 bg-brand/5 px-3 py-3 text-left"
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 dark:border-emerald-500/40 px-3 py-3 text-left"
                       onClick={() => {
                         addCatalogFood(food);
                         setPicked(food);
@@ -363,12 +363,12 @@ export function AddFoodSheet({
                       }}
                     >
                       <div>
-                        <p className="text-sm font-semibold">{foodName(food, locale)}</p>
-                        <p className="text-xs text-ink-soft">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{foodName(food, locale)}</p>
+                        <p className="text-xs text-gray-500 dark:text-zinc-400">
                           {food.brand ?? "OFF"} · {food.ean}
                         </p>
                       </div>
-                      <span className="text-sm font-semibold text-brand">
+                      <span className="text-sm font-bold text-emerald-600 dark:text-[#55dc88]">
                         {Math.round((food.per100g.kcal * food.defaultGrams) / 100)} kcal
                       </span>
                     </button>
@@ -379,7 +379,7 @@ export function AddFoodSheet({
         )}
 
         <form
-          className="mt-5 space-y-3 rounded-2xl border border-dashed border-[var(--line)] bg-white/60 p-3"
+          className="mt-5 space-y-3 rounded-2xl border border-dashed border-[var(--line)] bg-gray-50/70 dark:bg-[#1a1a1e] dark:border-zinc-800 p-3"
           onSubmit={(e) => {
             e.preventDefault();
             if (customKcal <= 0) return;
@@ -394,14 +394,14 @@ export function AddFoodSheet({
             onClose();
           }}
         >
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          <p className="level-kicker text-gray-500 dark:text-zinc-400">
             {t(locale, "quickAdd")}
           </p>
           <input
             value={customName}
             onChange={(e) => setCustomName(e.target.value)}
             placeholder={t(locale, "customName")}
-            className="w-full rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none ring-brand focus:ring-2"
+            className="w-full rounded-2xl border border-[var(--line)] bg-white dark:bg-[#242429] dark:border-zinc-700 px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 outline-none ring-emerald-500 focus:ring-2 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
           />
           <div className="grid grid-cols-4 gap-2">
             {(
@@ -412,19 +412,19 @@ export function AddFoodSheet({
                 ["F", customFat, setCustomFat],
               ] as const
             ).map(([label, value, setValue]) => (
-              <label key={label} className="text-[11px] font-semibold text-ink-soft">
+              <label key={label} className="text-[11px] font-bold text-gray-500 dark:text-zinc-400">
                 {label}
                 <input
                   type="number"
                   min={0}
                   value={value}
                   onChange={(e) => setValue(Number(e.target.value))}
-                  className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-2 py-1.5 text-sm font-medium text-ink"
+                  className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white dark:bg-[#242429] dark:border-zinc-700 px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-zinc-100 font-mono"
                 />
               </label>
             ))}
           </div>
-          <button type="submit" className="btn btn-primary w-full text-sm">
+          <button type="submit" className="btn btn-primary bg-emerald-600 dark:bg-[#55dc88] text-white dark:text-black font-extrabold w-full text-sm py-2.5">
             {t(locale, "addCustom")}
           </button>
         </form>
