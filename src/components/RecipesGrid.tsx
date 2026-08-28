@@ -22,7 +22,7 @@ function importError(locale: Locale, code: string) {
   return key ? t(locale, key) : code;
 }
 
-type FilterTag = "all" | "traditional" | "proteina" | "mic-dejun" | "pranz" | "cina" | "post" | "under400" | "quick";
+type FilterTag = "all" | "international" | "traditional" | "proteina" | "mic-dejun" | "pranz" | "cina" | "post" | "under400" | "quick";
 
 export function RecipesGrid() {
   const locale = useFarfurieStore((s) => s.locale);
@@ -61,6 +61,7 @@ export function RecipesGrid() {
       if (!matchesQuery) return false;
 
       if (selectedTag === "all") return true;
+      if (selectedTag === "international") return r.tags.includes("international");
       if (selectedTag === "traditional") return r.tags.includes("traditional");
       if (selectedTag === "proteina") return r.tags.includes("proteina") || r.perServing.protein >= 25;
       if (selectedTag === "mic-dejun") return r.tags.includes("mic-dejun");
@@ -185,6 +186,7 @@ export function RecipesGrid() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold">
           {[
             { id: "all", labelRo: "Toate", labelEn: "All" },
+            { id: "international", labelRo: "Internaționale 🌍", labelEn: "International 🌍" },
             { id: "traditional", labelRo: "Tradițional RO 🇷🇴", labelEn: "Romanian 🇷🇴" },
             { id: "proteina", labelRo: "Proteic 💪", labelEn: "High Protein 💪" },
             { id: "mic-dejun", labelRo: "Mic Dejun 🍳", labelEn: "Breakfast 🍳" },
